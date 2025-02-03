@@ -9,7 +9,7 @@ const showPieChart = ref(false)
 	<header>
 		<div class="wrapper">
 			<nav>
-				<RouterLink to="/">Home</RouterLink>
+				<RouterLink to="/">主頁</RouterLink>
 			</nav>
 		</div>
 	</header>

@@ -23,4 +23,5 @@ export default defineConfig({
 			},
 		},
 	},
+	base: '/vue3_accounting/',
 })
