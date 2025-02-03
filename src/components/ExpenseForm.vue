@@ -64,7 +64,10 @@ const calculate = () => {
 	}
 	try {
 		// 使用 eval 計算數學表達式
-		countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
+		// countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
+		countValue.value = String(
+			new Function('return ' + countValue.value.replace(/÷/g, '/').replace(/×/g, '*'))(),
+		)
 	} catch (error) {
 		// 若有錯誤則顯示錯誤
 		countValue.value = 'Error'
