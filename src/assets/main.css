@@ -1,0 +1,41 @@
+@import './base.css';
+
+
+#app {
+  max-width: 1000px;
+  /* display: flex; */
+  margin: 0 auto;
+  /* padding: 2rem;
+  font-weight: normal; */
+}
+/* header{ */
+    /* flex: 1; */
+/* } */
+/* main{
+    flex: 1;
+} */
+a {
+  text-decoration: none;
+  color: var(--color-yellow);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: var(--color-second);
+  }
+}
+/* 
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+} */
