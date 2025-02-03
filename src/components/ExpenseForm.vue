@@ -215,7 +215,6 @@ const removeExpense = (expense) => {
 			</button>
 		</div>
 		<div class="right_area">
-			<!-- <slot></slot> -->
 			<ExpenseList
 				:expenseList="myExpenseList"
 				@editExpense="editExpense"
@@ -295,6 +294,7 @@ const removeExpense = (expense) => {
 				padding: 4px;
 				margin: 0 10px;
 				border-bottom: 3px solid transparent;
+				cursor: pointer;
 			}
 			& > input {
 				display: none;
@@ -322,7 +322,6 @@ const removeExpense = (expense) => {
 		/* margin-bottom: 15px; */
 		display: flex;
 		align-items: center;
-
 		& > label {
 			/* font-size: large; */
 			background-color: var(--color-second);
@@ -333,6 +332,9 @@ const removeExpense = (expense) => {
 			@include border5;
 			color: var(--color-white);
 			letter-spacing: 1px;
+			&:hover {
+				background-color: #22234c;
+			}
 		}
 		& > input {
 			display: none;
@@ -385,6 +387,9 @@ const removeExpense = (expense) => {
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		&:hover {
+			background-color: var(--color-yellow-second);
+		}
 	}
 }
 .desc_area {

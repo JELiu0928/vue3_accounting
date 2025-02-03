@@ -4,7 +4,7 @@
 // }>()
 </script> -->
 <script setup lang="ts">
-import { ref, defineProps, computed, defineEmits, onMounted } from 'vue'
+import { ref, defineProps, computed, defineEmits } from 'vue'
 import Tree from 'primevue/tree'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -19,22 +19,22 @@ const props = defineProps({
 	expenseList: Array,
 })
 
+//定義事件
 const emit = defineEmits(['editExpense', 'removeExpense'])
-// const dateRange = ref([new Date(), new Date()])
+
 // 獲取當月的第一天和最後一天
-const getMonthDateRange = () => {
+const getDateRange = () => {
 	const today = new Date()
 	const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 	const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
 	return [startOfMonth, endOfMonth]
 }
-const [monthStart, monthEnd] = getMonthDateRange()
-// const start_date = ref(new Date('2024-05-05'))
-const start_date = ref(monthStart)
-const end_date = ref(monthEnd)
-const dateRange = ref([monthStart, monthEnd])
+const [rangeStart, rangeEnd] = getDateRange()
+console.log(rangeStart)
+const start_date = ref(rangeStart)
+const end_date = ref(rangeEnd)
+const dateRange = ref([rangeStart, rangeEnd])
 console.log('date', dateRange.value)
-// const dateRange = ref([new Date('2024-05-05'), new Date('2025-01-31')])
 const selectedShowType = ref('show_expense')
 const categories = [
 	{ id: 1, cate: '飲食' },
@@ -47,71 +47,16 @@ const categories = [
 	{ id: 8, cate: '其它3' },
 	{ id: 999, cate: '未分類' },
 ]
-// const treeData = ref([])
-// const [start_date, end_date] = dateRange.value
-// start_date = formatDate(start_date)
-// end_date = formatDate(end_date)
-// console.log('start_date', start_date.value, 'end_date', end_date.value)
-//2024-06-05 <= 2025-01-05 <=2025-02-02
-// const treeData = computed(() => {
-// 	// 存放每個分類的帳目
-// 	const categoryMap = new Map()
-// 	const filteredList = props.expenseList.filter((expense) => {
-// 		if (selectedShowType.value === 'show_expense') {
-// 			return (
-// 				expense.type === 'expense' &&
-// 				start_date <= new Date(expense.date) &&
-// 				new Date(expense.date) <= end_date
-// 			)
-// 		} else {
-// 			return (
-// 				expense.type === 'income' &&
-// 				start_date <= new Date(expense.date) &&
-// 				new Date(expense.date) <= end_date
-// 			)
-// 		}
-// 	})
 
-// 	// return
-// 	filteredList.forEach((expense) => {
-// 		if (!categoryMap.has(expense.category)) {
-// 			const category = categories.find((c) => c.id === expense.category)
-// 			categoryMap.set(expense.category, {
-// 				key: `category-${expense.category}`,
-// 				label: category ? category.cate : '未分類',
-// 				type: 'category',
-// 				total: 0,
-// 				expanded: true,
-// 				children: [],
-// 			})
-// 		}
-// 		const categoryNode = categoryMap.get(expense.category)
-// 		categoryNode.children.push({
-// 			key: expense.id,
-// 			id: expense.id,
-// 			type: 'expense',
-// 			date: expense.date,
-// 			description: expense.description,
-// 			amount: String(expense.amount),
-// 			category: expense.category, // 加入分類資訊
-// 		})
-// 		categoryNode.total += parseInt(expense.amount)
-// 		// console.log(categoryMap)
-// 	})
-// 	return Array.from(categoryMap.values())
-// })
 const pieChartData = computed(() => {
-	console.log('Calculating pieChartData...')
 	const { chart } = calculateTreeData(
 		props.expenseList,
 		start_date.value,
 		end_date.value,
 		selectedShowType.value,
 	)
-	// console.log('Pie Chart Data:', chart) // 確保 chart 是有值的
 	return chart
 })
-// console.log('pieChartData', pieChartData)
 const treeData = computed(() => {
 	console.log(11111)
 	return calculateTreeData(
@@ -125,7 +70,9 @@ const treeData = computed(() => {
 const calculateTreeData = function (list, startDate, endDate, showType) {
 	// 存放每個分類的帳目
 	const categoryMap = new Map()
+	// 圓餅圖的結構
 	const chartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+
 	const filteredList = list.filter((expense) => {
 		const expenseDate = new Date(expense.date)
 		const isInDateRange = startDate <= expenseDate && expenseDate <= endDate
@@ -139,16 +86,18 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
 	filteredList.forEach((expense) => {
 		if (!categoryMap.has(expense.category)) {
 			const category = categories.find((c) => c.id === expense.category)
+			// tree結構
 			categoryMap.set(expense.category, {
-				key: `category-${expense.category}`,
-				label: category ? category.cate : '未分類',
-				type: 'category',
-				total: 0,
-				expanded: true,
-				children: [],
+				key: `category-${expense.category}`, // 節點的唯一識別碼
+				label: category ? category.cate : '未分類', // 顯示的名稱
+				type: 'category', // 節點類型
+				total: 0, // 該分類的總金額
+				expanded: true, // 是否展開該分類節點
+				children: [], // 該分類底下的支出項目
 			})
 		}
 		const categoryNode = categoryMap.get(expense.category)
+		//子節點
 		categoryNode.children.push({
 			key: expense.id,
 			id: expense.id,
@@ -159,7 +108,6 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
 			category: expense.category,
 		})
 		categoryNode.total += parseInt(expense.amount)
-		// console.log(categoryMap)
 	})
 	// 處理圓餅圖資料
 	categoryMap.forEach((category) => {
@@ -169,19 +117,29 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
 		chartData.datasets[0].backgroundColor.push(getRandomColor()) // 給每個類別隨機顏色
 	})
 	// return Array.from(categoryMap.values())
-	console.log('??', chartData)
 	return {
 		tree: Array.from(categoryMap.values()),
 		chart: chartData,
 	}
 }
-const searchByDateRange = function () {
-	if (!dateRange.value || !dateRange.value.length === 2) return
-	// console.log(dateRange)
-	const [newStartDate, newEndDate] = dateRange.value
-	start_date.value = new Date(newStartDate)
-	end_date.value = new Date(newEndDate)
-	// treeData.value = []
+const searchByDateRange = function (type) {
+	if (type == 'custom') {
+		if (!dateRange.value || !dateRange.value.length === 2) return
+		const [newStartDate, newEndDate] = dateRange.value
+		start_date.value = new Date(newStartDate)
+		end_date.value = new Date(newEndDate)
+	} else if (type == 'today') {
+		const today = new Date()
+		start_date.value = today.setHours(0, 0, 0, 0)
+		end_date.value = today.setHours(23, 59, 59, 999)
+		dateRange.value = [start_date.value, end_date.value]
+		console.log('==', start_date.value, end_date.value)
+	} else if (type == 'month') {
+		const [rangeStart, rangeEnd] = getDateRange()
+		start_date.value = new Date(rangeStart)
+		end_date.value = new Date(rangeEnd)
+		dateRange.value = [start_date.value, end_date.value]
+	}
 }
 
 const edit = function (expense) {
@@ -236,8 +194,9 @@ const toggleCategory = (node) => {
 				:default-value="[new Date(), new Date()]"
 			/>
 		</el-config-provider>
-		<button @click="searchByDateRange">搜尋</button>
-		<button @click="showPieChart = !showPieChart">圖表</button>
+		<button @click="searchByDateRange('custom')">搜尋</button>
+		<button @click="searchByDateRange('today')">今日</button>
+		<button @click="searchByDateRange('month')">本月</button>
 	</div>
 	<div class="type_area">
 		<input
@@ -257,6 +216,9 @@ const toggleCategory = (node) => {
 			v-model="selectedShowType"
 		/>
 		<label for="show_income">收入</label>
+	</div>
+	<div class="search_area">
+		<button @click="showPieChart = !showPieChart">查看圓餅圖</button>
 	</div>
 	<div class="card">
 		<Tree
@@ -319,11 +281,28 @@ const toggleCategory = (node) => {
 		}
 	}
 }
-
+.search_area {
+	display: flex;
+	align-items: center;
+	justify-content: right;
+	margin: 5px 0;
+	& > button {
+		width: 90px;
+		/* border-radius: 5px; */
+		@include border5;
+		padding: 8px 10px;
+		background-color: var(--color-yellow);
+		border: none;
+		color: var(--color-second);
+		&:hover {
+			background-color: var(--color-yellow-second);
+		}
+	}
+}
 .card {
 	@include border5;
 	overflow-y: scroll;
-	height: 80vh;
+	height: 75vh;
 	&::-webkit-scrollbar {
 		width: 5px;
 		/* background: var(--color-second); */
@@ -353,6 +332,9 @@ const toggleCategory = (node) => {
 		border: none;
 		color: var(--color-second);
 		cursor: pointer;
+		&:hover {
+			background-color: var(--color-yellow-second);
+		}
 	}
 }
 
@@ -390,7 +372,7 @@ const toggleCategory = (node) => {
 		padding: 4px;
 		margin: 0 10px;
 		border-bottom: 3px solid transparent;
-		/* @include border5; */
+		cursor: pointer;
 	}
 	& > input {
 		display: none;

@@ -9,8 +9,7 @@
 	--color-second: #131439;
 
 	--vt-c-indigo: #2c3e50;
-
-
+	--color-yellow-second: #d6ac04;
 }
 :root {
     --color-bg: var(--color-main);
