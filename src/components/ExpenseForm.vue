@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, type Ref } from 'vue'
 import ExpenseList from './ExpenseList.vue'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 // 定義 input 欄位的值
 const countValue = ref<string>('')
-const descValue = ref('')
-
+const descValue = ref<string>('')
+interface ExpenseType {
+	// 根據實際資料結構設置屬性
+	amount: string
+	category: number
+	date: string
+	description: string
+	id: number
+	// key: number
+	type: string
+}
+interface Category_id {
+	id: number
+	cate: string
+}
 // 定義按鈕的數字或符號
 const buttons = ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '-', '0', '.', '=', '+']
 const categories = [
@@ -23,11 +36,11 @@ const categories = [
 ]
 const date = ref(new Date())
 const locale = zhCn
-const selectedCate = ref(null)
-const selectedType = ref('expense')
-const myExpenseList = ref([])
-const isEditMode = ref(false) // 是否為編輯模式
-const currentEditItem = ref(null) // 當前編輯的項目
+const selectedCate = ref<number | null>(null)
+const selectedType = ref<string>('expense')
+const myExpenseList = ref<ExpenseType[]>([])
+const isEditMode = ref<boolean>(false) // 是否為編輯模式
+const currentEditItem = ref<{ id: number } | null>(null) // 當前編輯的項目
 
 const loadStorageExpense = () => {
 	const storageExpense = localStorage.getItem('storageExpense')
@@ -91,13 +104,14 @@ const saveOrUpdate = () => {
 		alert('請選擇分類')
 		return
 	}
+
 	if (countValue.value) {
-		const selectedCategory = categories.find((c) => c.id === selectedCate.value)
-		console.log('===', selectedType.value)
+		const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
+		// console.log('===', selectedType.value)
 		const defaultDescription = selectedCategory ? selectedCategory.cate : ''
 		countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
 		const expense = {
-			id: isEditMode.value ? currentEditItem.value.id : Date.now(), // 如果是編輯模式，保持 id 不變,
+			id: isEditMode.value ? (currentEditItem.value?.id ?? Date.now()) : Date.now(), // 如果是編輯模式，保持 id 不變,
 			date: formattedDate,
 			amount: countValue.value,
 			category: selectedCate.value,
@@ -107,10 +121,10 @@ const saveOrUpdate = () => {
 
 		// 編輯模式下更新資料
 		if (isEditMode.value) {
-			console.log('編輯', currentEditItem.value)
+			console.log('編輯', myExpenseList.value)
 			const index = myExpenseList.value.findIndex((item) => {
 				console.log('item', item)
-				return item.id === currentEditItem.value.id
+				return item.id === (currentEditItem.value ? currentEditItem.value.id : null)
 			})
 			console.log('index', index)
 			if (index !== -1) {
@@ -137,8 +151,8 @@ const saveOrUpdate = () => {
 	console.log(myExpenseList)
 	console.log(localStorage.getItem('storageExpense'))
 }
-const editExpense = (expense) => {
-	console.log('ex', expense)
+const editExpense = (expense: ExpenseType) => {
+	console.log('exxxxxedit', expense)
 	isEditMode.value = true
 	currentEditItem.value = expense
 	date.value = new Date(expense.date)
@@ -147,8 +161,10 @@ const editExpense = (expense) => {
 	countValue.value = expense.amount
 	selectedType.value = expense.type
 }
-const removeExpense = (expense) => {
+const removeExpense = (expense: ExpenseType) => {
 	// localStorage.getItem('storageExpense')
+	console.log('removeExpense', expense)
+
 	const confirmRemove = confirm('確定刪除嗎?')
 	if (confirmRemove) {
 		myExpenseList.value = myExpenseList.value.filter((item) => item.id !== expense.id)
@@ -156,6 +172,7 @@ const removeExpense = (expense) => {
 		console.log('remove', expense)
 	}
 }
+console.log('myExpenseList', myExpenseList)
 </script>
 
 <template>

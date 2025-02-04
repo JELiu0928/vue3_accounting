@@ -4,9 +4,9 @@ import ExpenseList from '../components/ExpenseList.vue'
 </script>
 
 <template>
-	<!-- <main> -->
-	<PieChart />
-	<ExpenseList />
-	<!-- </ExpenseForm> -->
-	<!-- </main> -->
+	<main>
+		<!-- <PieChart /> -->
+		<!-- <ExpenseList /> -->
+		<!-- </ExpenseForm> -->
+	</main>
 </template>

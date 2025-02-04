@@ -5,8 +5,9 @@ import ExpenseList from '../components/ExpenseList.vue'
 
 <template>
 	<!-- <main> -->
-	<ExpenseForm>
+	<ExpenseForm />
+	<!-- <ExpenseForm>
 		<ExpenseList />
-	</ExpenseForm>
+	</ExpenseForm> -->
 	<!-- </main> -->
 </template>

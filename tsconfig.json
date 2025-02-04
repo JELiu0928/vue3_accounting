@@ -1,11 +1,26 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    },
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ]
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.node.json"
+		},
+		{
+			"path": "./tsconfig.app.json"
+		}
+	],
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "node",
+		"jsx": "preserve",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"types": ["vite/client", "vue"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+	"exclude": ["node_modules"]
 }

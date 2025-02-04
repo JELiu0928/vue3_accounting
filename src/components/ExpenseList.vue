@@ -15,10 +15,56 @@ const showPieChart = ref(false)
 
 const locale = zhCn
 
-const props = defineProps({
-	expenseList: Array,
-})
+interface ExpenseType {
+	// 根據實際資料結構設置屬性
+	amount: string
+	category: number
+	date: string
+	description: string
+	id: number
+	key?: number | string
+	type: string
+	expanded?: boolean
+	label?: string
+}
 
+const props = defineProps<{
+	expenseList: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
+}>()
+
+interface Category {
+	children: Array<ExpenseType>
+	id: string
+	label: string
+	total: number
+	expanded: boolean
+	type: string
+}
+interface Category_id {
+	id: number
+	cate: string
+}
+interface ChartData {
+	labels: string[]
+	datasets: {
+		data: number[]
+		backgroundColor: string[]
+	}[]
+}
+// interface TreeDataNode {
+// 	key: string
+// 	id?: string
+// 	children?: TreeDataNode[] // 修正 array 為正確的型別
+// 	label: string
+// 	amount?: number
+// 	date?: string
+// 	expanded?: boolean
+// 	total?: number
+// }
+interface TreeDataResult {
+	chart: any // 根據實際的 chart 類型定義
+	tree: any // 根據實際的 tree 類型定義
+}
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense'])
 
@@ -26,17 +72,23 @@ const emit = defineEmits(['editExpense', 'removeExpense'])
 const getDateRange = () => {
 	const today = new Date()
 	const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+	startOfMonth.setHours(0, 0, 0, 0)
 	const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+	endOfMonth.setHours(23, 59, 59, 999)
 	return [startOfMonth, endOfMonth]
 }
 const [rangeStart, rangeEnd] = getDateRange()
-console.log(rangeStart)
-const start_date = ref(rangeStart)
-const end_date = ref(rangeEnd)
-const dateRange = ref([rangeStart, rangeEnd])
+console.log('r===', rangeStart, rangeEnd)
+const start_date = ref<Date>(rangeStart)
+const end_date = ref<Date>(rangeEnd)
+// const dateRange = ref<[Date, Date] | null>(rangeStart && rangeEnd ? [rangeStart, rangeEnd] : null)
+const dateRange = ref<[Date, Date] | undefined>(
+	rangeStart && rangeEnd ? [rangeStart, rangeEnd] : undefined,
+)
+
 console.log('date', dateRange.value)
 const selectedShowType = ref('show_expense')
-const categories = [
+const categories: Category_id[] = [
 	{ id: 1, cate: '飲食' },
 	{ id: 2, cate: '日常' },
 	{ id: 3, cate: '交通' },
@@ -50,7 +102,7 @@ const categories = [
 
 const pieChartData = computed(() => {
 	const { chart } = calculateTreeData(
-		props.expenseList,
+		props.expenseList || [],
 		start_date.value,
 		end_date.value,
 		selectedShowType.value,
@@ -58,22 +110,29 @@ const pieChartData = computed(() => {
 	return chart
 })
 const treeData = computed(() => {
-	console.log(11111)
+	// console.log(start_date.value)
 	return calculateTreeData(
-		props.expenseList,
+		props.expenseList || [],
 		start_date.value,
 		end_date.value,
 		selectedShowType.value,
 	).tree
 })
-
-const calculateTreeData = function (list, startDate, endDate, showType) {
+// console.log('treeData=', treeData.value[0].children)
+const calculateTreeData = function (
+	list: ExpenseType[],
+	startDate: Date,
+	endDate: Date,
+	showType: string,
+): TreeDataResult {
 	// 存放每個分類的帳目
 	const categoryMap = new Map()
 	// 圓餅圖的結構
-	const chartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+	const chartData: ChartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+	console.log('lsit', list)
+	const filteredList = list.filter((expense: ExpenseType) => {
+		// console.log('expense', expense)
 
-	const filteredList = list.filter((expense) => {
 		const expenseDate = new Date(expense.date)
 		const isInDateRange = startDate <= expenseDate && expenseDate <= endDate
 		const isCorrectType =
@@ -83,9 +142,11 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
 	})
 
 	// return
-	filteredList.forEach((expense) => {
+	filteredList.forEach((expense: ExpenseType) => {
 		if (!categoryMap.has(expense.category)) {
-			const category = categories.find((c) => c.id === expense.category)
+			const category = categories.find((c: Category_id) => c.id === expense.category)
+			console.log('==22=', category)
+
 			// tree結構
 			categoryMap.set(expense.category, {
 				key: `category-${expense.category}`, // 節點的唯一識別碼
@@ -110,28 +171,29 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
 		categoryNode.total += parseInt(expense.amount)
 	})
 	// 處理圓餅圖資料
-	categoryMap.forEach((category) => {
-		// console.log('===', category)
+	categoryMap.forEach((category: Category) => {
+		console.log('===', category)
 		chartData.labels.push(category.label)
 		chartData.datasets[0].data.push(category.total)
 		chartData.datasets[0].backgroundColor.push(getRandomColor()) // 給每個類別隨機顏色
 	})
+	console.log('chartData', chartData)
 	// return Array.from(categoryMap.values())
 	return {
 		tree: Array.from(categoryMap.values()),
 		chart: chartData,
 	}
 }
-const searchByDateRange = function (type) {
+const searchByDateRange = function (type: string) {
 	if (type == 'custom') {
-		if (!dateRange.value || !dateRange.value.length === 2) return
+		if (!dateRange.value || dateRange.value.length !== 2) return
 		const [newStartDate, newEndDate] = dateRange.value
 		start_date.value = new Date(newStartDate)
 		end_date.value = new Date(newEndDate)
 	} else if (type == 'today') {
 		const today = new Date()
-		start_date.value = today.setHours(0, 0, 0, 0)
-		end_date.value = today.setHours(23, 59, 59, 999)
+		start_date.value = new Date(today.setHours(0, 0, 0, 0))
+		end_date.value = new Date(today.setHours(23, 59, 59, 999))
 		dateRange.value = [start_date.value, end_date.value]
 		console.log('==', start_date.value, end_date.value)
 	} else if (type == 'month') {
@@ -142,10 +204,11 @@ const searchByDateRange = function (type) {
 	}
 }
 
-const edit = function (expense) {
+const edit = function (expense: ExpenseType) {
+	console.log('sss', expense)
 	emit('editExpense', expense)
 }
-const remove = function (expense) {
+const remove = function (expense: ExpenseType) {
 	emit('removeExpense', expense)
 }
 const getRandomColor = () => {
@@ -158,19 +221,23 @@ const getRandomColor = () => {
 }
 
 // 讓整行分類可展開收合
-const expandedKeys = ref({}) // 存放展開狀態
-const toggleCategory = (node) => {
+// const expandedKeys = ref({}) // 存放展開狀態
+const expandedKeys = ref<Record<string, boolean>>({}) // 初始化為空對象
+const toggleCategory = (node: ExpenseType) => {
+	console.log('node', node)
 	if (node.type === 'category') {
 		const key = node.key
+		console.log('key,', key)
 		// 切換展開/收合
-		if (expandedKeys.value[key]) {
-			delete expandedKeys.value[key] // 收合
+		if (expandedKeys.value[key as string]) {
+			delete expandedKeys.value[key as string] // 收合
 		} else {
-			expandedKeys.value[key] = true // 展開
+			expandedKeys.value[key as string] = true // 展開
 		}
 
 		// 讓 Vue 重新計算，確保 UI 變更
 		expandedKeys.value = { ...expandedKeys.value }
+		// console.log('expandedKeys', expandedKeys)
 
 		console.log('分類', node.label, '展開狀態：', expandedKeys.value)
 	}
@@ -187,7 +254,7 @@ const toggleCategory = (node) => {
 		<el-config-provider :locale="locale">
 			<el-date-picker
 				v-model="dateRange"
-				type="daterange"
+				:type="'daterange'"
 				range-separator="至"
 				start-placeholder="開始日期"
 				end-placeholder="結束日期"
@@ -230,7 +297,7 @@ const toggleCategory = (node) => {
 			<template #default="{ node }">
 				<!-- 如果是分類節點 -->
 				<template v-if="node.type === 'category'">
-					<div class="expense_cate" @click="toggleCategory(node)">
+					<div class="expense_cate" @click="toggleCategory(node as ExpenseType)">
 						<span>{{ node.label }}</span>
 						<span class="expense_total">${{ node.total }}</span>
 					</div>
@@ -238,15 +305,16 @@ const toggleCategory = (node) => {
 				<!-- 如果是支出項目節點 -->
 				<template v-else>
 					<div class="expense_item">
+						<div>{{ node }}</div>
 						<span>{{ node.date }}</span>
 						<span>{{ node.description }}</span>
 						<span class=""
 							>${{ node.amount }}
 							<!-- <div class="btn_wrapper"> -->
-							<button @click="edit(node)" class="btn_edit btn">
+							<button @click="edit(node as ExpenseType)" class="btn_edit btn">
 								<i class="fa-solid fa-pen"></i>
 							</button>
-							<button @click="remove(node)" class="btn_remove btn">
+							<button @click="remove(node as ExpenseType)" class="btn_remove btn">
 								<i class="fa-solid fa-trash-can"></i>
 							</button>
 							<!-- </div> -->

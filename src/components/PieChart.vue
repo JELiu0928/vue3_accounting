@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, defineProps, computed } from 'vue'
+import { defineProps, computed, type PropType } from 'vue'
 
 import { Pie } from 'vue-chartjs' // 引入 Vue 封裝的 Pie 組件
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title, PieController } from 'chart.js'
@@ -7,10 +7,20 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title, PieController } f
 // 註冊所需的 Chart.js 組件
 ChartJS.register(ArcElement, Tooltip, Legend, Title, PieController)
 
-const props = defineProps<{
-	pieChartData: ChartData
-	//   colors?: string[]
-}>()
+interface PieChartData {
+	labels: string[]
+	datasets: Array<{ label: string; data: number[] }>
+}
+const props = defineProps({
+	pieChartData: {
+		type: Object as PropType<PieChartData>, // 明確指定類型
+		required: true,
+	},
+})
+// const props = defineProps<{
+// 	pieChartData: ChartData
+// 	//   colors?: string[]
+// }>()
 // 處理圖表數據
 const chartData = computed(() => {
 	if (!props.pieChartData) return null
