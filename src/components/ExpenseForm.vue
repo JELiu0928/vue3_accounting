@@ -9,13 +9,15 @@ const countValue = ref<string>('')
 const descValue = ref<string>('')
 interface ExpenseType {
 	// 根據實際資料結構設置屬性
+	id: number
+	key?: number | string
 	amount: string
 	category: number
 	date: string
 	description: string
-	id: number
-	// key: number
 	type: string
+	expanded?: boolean
+	label?: string
 }
 interface Category_id {
 	id: number
@@ -416,7 +418,7 @@ const removeExpense = (expense: ExpenseType) => {
 			color: var(--color-yellow);
 			cursor: pointer;
 			font-weight: 100;
-			font-size: 15px;
+			/* font-size: 15px; */
 			letter-spacing: 1px;
 		}
 		.el-input__wrapper {

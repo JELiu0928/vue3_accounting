@@ -1,7 +1,4 @@
-/// <reference types="../node_modules/.vue-global-types/vue_3.5_false.d.ts" />
-import { RouterLink, RouterView } from 'vue-router';
-import { ref } from 'vue';
-const showPieChart = ref(false); /* PartiallyEnd: #3632/scriptSetup.vue */
+import { RouterLink, RouterView } from 'vue-router'; /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
     const __VLS_ctx = {};
     let __VLS_components;

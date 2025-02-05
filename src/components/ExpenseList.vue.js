@@ -1,9 +1,10 @@
-import { ref, defineProps, computed, defineEmits } from 'vue';
+import { ref, defineProps, computed, defineEmits, nextTick, watch } from 'vue';
 import Tree from 'primevue/tree';
 import { ElDatePicker, ElConfigProvider } from 'element-plus';
 import 'element-plus/dist/index.css';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import PieChart from './PieChart.vue';
+import Excel from './Excel.vue';
 const props = defineProps();
 //#endregion
 const showPieChart = ref(false);
@@ -20,7 +21,7 @@ const getDateRange = () => {
     return [startOfMonth, endOfMonth];
 };
 const [rangeStart, rangeEnd] = getDateRange();
-// console.log('r===', rangeStart, rangeEnd)
+console.log('r===', rangeStart, rangeEnd);
 const start_date = ref(rangeStart);
 const end_date = ref(rangeEnd);
 const dateRange = ref(rangeStart && rangeEnd ? [rangeStart, rangeEnd] : undefined);
@@ -40,15 +41,6 @@ let categories = [
 const costomCate = JSON.parse(localStorage.getItem('customCate') || '[]');
 categories = [...categories, ...costomCate];
 console.log('categories', categories);
-const pieChartData = computed(() => {
-    const { chart } = calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value);
-    return chart;
-});
-const treeData = computed(() => {
-    // console.log(start_date.value)
-    return calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value).tree;
-});
-// console.log('treeData=', treeData.value[0].children)
 const calculateTreeData = function (list, startDate, endDate, showType) {
     // 存放每個分類的帳目
     const categoryMap = new Map();
@@ -104,14 +96,29 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         chart: chartData,
     };
 };
+const pieChartData = computed(() => {
+    const { chart } = calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value);
+    return chart;
+});
+const treeData = computed(() => {
+    // console.log(start_date.value)
+    // console.log('treeData start_date.value,=', start_date.value,)
+    return calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value).tree;
+});
+// console.log('treeData=', treeData)
+// console.log('treeData value=', treeData.value)
+watch([props.expenseList, start_date, end_date], () => {
+    console.log('treeData 已更新', treeData);
+    console.log('treeData value已更新', treeData.value);
+});
 const searchByDateRange = function (type) {
     if (type == 'custom') {
         if (!dateRange.value || dateRange.value.length !== 2)
             return;
         const [newStartDate, newEndDate] = dateRange.value;
-        start_date.value = new Date(newStartDate);
-        end_date.value = new Date(newEndDate);
-        console.log(start_date.value, '-----', end_date.value);
+        start_date.value = new Date(newStartDate.setHours(0, 0, 0, 0));
+        end_date.value = new Date(newEndDate.setHours(23, 59, 59, 999));
+        // console.log(start_date.value, '-----', end_date.value)
     }
     else if (type == 'today') {
         const today = new Date();
@@ -162,7 +169,14 @@ const toggleCategory = (node) => {
         // console.log('expandedKeys', expandedKeys)
         // console.log('分類', node.label, '展開狀態：', expandedKeys.value)
     }
-}; /* PartiallyEnd: #3632/scriptSetup.vue */
+};
+const isTreeDataReady = ref(false);
+// 在計算屬性變化時，使用 nextTick 等待計算完成
+nextTick(() => {
+    if (treeData.value.length > 0) {
+        isTreeDataReady.value = true;
+    }
+}); /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
     const __VLS_ctx = {};
     let __VLS_components;
@@ -270,6 +284,17 @@ function __VLS_template() {
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
         ...{ class: ("search_area") },
     });
+    if (__VLS_ctx.isTreeDataReady) {
+        // @ts-ignore
+        /** @type { [typeof Excel, ] } */ ;
+        // @ts-ignore
+        const __VLS_17 = __VLS_asFunctionalComponent(Excel, new Excel({
+            treeData: ((__VLS_ctx.treeData)),
+        }));
+        const __VLS_18 = __VLS_17({
+            treeData: ((__VLS_ctx.treeData)),
+        }, ...__VLS_functionalComponentArgsRest(__VLS_17));
+    }
     __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
         ...{ onClick: (...[$event]) => {
                 __VLS_ctx.showPieChart = !__VLS_ctx.showPieChart;
@@ -278,30 +303,30 @@ function __VLS_template() {
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
         ...{ class: ("card") },
     });
-    const __VLS_17 = {}.Tree;
+    const __VLS_22 = {}.Tree;
     /** @type { [typeof __VLS_components.Tree, typeof __VLS_components.Tree, ] } */ ;
     // @ts-ignore
-    const __VLS_18 = __VLS_asFunctionalComponent(__VLS_17, new __VLS_17({
+    const __VLS_23 = __VLS_asFunctionalComponent(__VLS_22, new __VLS_22({
         ...{ 'onNodeClick': {} },
         value: ((__VLS_ctx.treeData)),
         ...{ class: ("expense_tree") },
         expandedKeys: ((__VLS_ctx.expandedKeys)),
     }));
-    const __VLS_19 = __VLS_18({
+    const __VLS_24 = __VLS_23({
         ...{ 'onNodeClick': {} },
         value: ((__VLS_ctx.treeData)),
         ...{ class: ("expense_tree") },
         expandedKeys: ((__VLS_ctx.expandedKeys)),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_18));
-    let __VLS_23;
-    const __VLS_24 = {
+    }, ...__VLS_functionalComponentArgsRest(__VLS_23));
+    let __VLS_28;
+    const __VLS_29 = {
         onNodeClick: (__VLS_ctx.toggleCategory)
     };
-    let __VLS_20;
-    let __VLS_21;
+    let __VLS_25;
+    let __VLS_26;
     __VLS_elementAsFunction(__VLS_intrinsicElements.template, __VLS_intrinsicElements.template)({});
     {
-        const { default: __VLS_thisSlot } = __VLS_22.slots;
+        const { default: __VLS_thisSlot } = __VLS_27.slots;
         const [{ node }] = __VLS_getSlotParams(__VLS_thisSlot);
         if (node.type === 'category') {
             __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
@@ -353,7 +378,7 @@ function __VLS_template() {
             });
         }
     }
-    var __VLS_22;
+    var __VLS_27;
     ['modal', 'modal_content', 'date_range_area', 'type_area', 'search_area', 'card', 'expense_tree', 'expense_cate', 'expense_total', 'expense_item', 'btn_edit', 'btn', 'fa-solid', 'fa-pen', 'btn_remove', 'btn', 'fa-solid', 'fa-trash-can',];
     var __VLS_slots;
     var $slots;
@@ -377,6 +402,7 @@ const __VLS_self = (await import('vue')).defineComponent({
             ElDatePicker: ElDatePicker,
             ElConfigProvider: ElConfigProvider,
             PieChart: PieChart,
+            Excel: Excel,
             showPieChart: showPieChart,
             locale: locale,
             dateRange: dateRange,
@@ -388,6 +414,7 @@ const __VLS_self = (await import('vue')).defineComponent({
             remove: remove,
             expandedKeys: expandedKeys,
             toggleCategory: toggleCategory,
+            isTreeDataReady: isTreeDataReady,
         };
     },
     emits: {},

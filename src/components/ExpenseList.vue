@@ -4,12 +4,16 @@
 // }>()
 </script> -->
 <script setup lang="ts">
-import { ref, defineProps, computed, defineEmits } from 'vue'
+import { ref, defineProps, computed, defineEmits,nextTick ,watch} from 'vue'
 import Tree from 'primevue/tree'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import PieChart from './PieChart.vue'
+import Excel from './Excel.vue'
+
+// import type { ExpenseType } from '../types/expense'
+// console.log('ExpenseType 已加載', ExpenseType)
 
 const props = defineProps<{
 	expenseList: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
@@ -69,7 +73,7 @@ const getDateRange = () => {
 	return [startOfMonth, endOfMonth]
 }
 const [rangeStart, rangeEnd] = getDateRange()
-// console.log('r===', rangeStart, rangeEnd)
+console.log('r===', rangeStart, rangeEnd)
 const start_date = ref<Date>(rangeStart)
 const end_date = ref<Date>(rangeEnd)
 const dateRange = ref<[Date, Date] | undefined>(
@@ -95,25 +99,8 @@ categories = [...categories, ...costomCate]
 
 console.log('categories', categories)
 
-const pieChartData = computed(() => {
-	const { chart } = calculateTreeData(
-		props.expenseList || [],
-		start_date.value,
-		end_date.value,
-		selectedShowType.value,
-	)
-	return chart
-})
-const treeData = computed(() => {
-	// console.log(start_date.value)
-	return calculateTreeData(
-		props.expenseList || [],
-		start_date.value,
-		end_date.value,
-		selectedShowType.value,
-	).tree
-})
-// console.log('treeData=', treeData.value[0].children)
+
+
 const calculateTreeData = function (
 	list: ExpenseType[],
 	startDate: Date,
@@ -179,13 +166,40 @@ const calculateTreeData = function (
 		chart: chartData,
 	}
 }
+const pieChartData = computed(() => {
+	const { chart } = calculateTreeData(
+		props.expenseList || [],
+		start_date.value,
+		end_date.value,
+		selectedShowType.value,
+	)
+	return chart
+})
+
+const treeData = computed(() => {
+	// console.log(start_date.value)
+    // console.log('treeData start_date.value,=', start_date.value,)
+
+	return calculateTreeData(
+		props.expenseList || [],
+		start_date.value,
+		end_date.value,
+		selectedShowType.value,
+	).tree
+})
+// console.log('treeData=', treeData)
+// console.log('treeData value=', treeData.value)
+watch([props.expenseList, start_date, end_date], () => {
+  console.log('treeData 已更新', treeData)
+  console.log('treeData value已更新', treeData.value)
+})
 const searchByDateRange = function (type: string) {
 	if (type == 'custom') {
 		if (!dateRange.value || dateRange.value.length !== 2) return
 		const [newStartDate, newEndDate] = dateRange.value
-		start_date.value = new Date(newStartDate)
-		end_date.value = new Date(newEndDate)
-		console.log(start_date.value, '-----', end_date.value)
+		start_date.value = new Date(newStartDate.setHours(0, 0, 0, 0))
+		end_date.value = new Date(newEndDate.setHours(23, 59, 59, 999))
+		// console.log(start_date.value, '-----', end_date.value)
 	} else if (type == 'today') {
 		const today = new Date()
 		start_date.value = new Date(today.setHours(0, 0, 0, 0))
@@ -238,6 +252,15 @@ const toggleCategory = (node: ExpenseType) => {
 		// console.log('分類', node.label, '展開狀態：', expandedKeys.value)
 	}
 }
+
+const isTreeDataReady = ref(false)
+
+// 在計算屬性變化時，使用 nextTick 等待計算完成
+nextTick(() => {
+  if (treeData.value.length > 0) {
+    isTreeDataReady.value = true
+  }
+})
 </script>
 <template>
 	<div v-if="showPieChart" class="modal">
@@ -281,6 +304,7 @@ const toggleCategory = (node: ExpenseType) => {
 		<label for="show_income">收入</label>
 	</div>
 	<div class="search_area">
+		<Excel v-if="isTreeDataReady" :treeData="treeData" />
 		<button @click="showPieChart = !showPieChart">查看圓餅圖</button>
 	</div>
 	<div class="card">
@@ -347,10 +371,11 @@ const toggleCategory = (node: ExpenseType) => {
 	align-items: center;
 	justify-content: right;
 	margin: 5px 0;
+	gap: 10px;
 	& > button {
 		width: 90px;
 		/* border-radius: 5px; */
-		@include mainColorBtn;
+		@include yellowBtn;
 		padding: 8px 10px;
 		background-color: var(--color-yellow);
 		border: none;
@@ -451,7 +476,7 @@ const toggleCategory = (node: ExpenseType) => {
 		color: var(--color-yellow);
 		font-family: 'Roboto', serif;
 		font-weight: 100;
-		font-size: 15px;
+		/* font-size: 15px; */
 	}
 }
 .el-date-editor .el-range-input {

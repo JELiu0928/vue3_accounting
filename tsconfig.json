@@ -19,7 +19,12 @@
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"allowJs": true,
-		"types": ["vite/client", "vue"]
+		"types": ["vite/client", "vue"],
+		"baseUrl": "./",
+		"paths": {
+			// "@": ["src"],
+			"@/*": ["./src/*"]
+		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
 	"exclude": ["node_modules"]
