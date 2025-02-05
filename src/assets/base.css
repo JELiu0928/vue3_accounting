@@ -2,11 +2,12 @@
 :root {
 	--color-white: #dddada;
 	--color-yellow: #F4C500;
-	--color-a: rgba(50, 50, 80, 0.6);
+	--color-gray-light: rgb(176, 176, 176);
 	--color-white-2: #ededed;
 
 	--color-main: #090a29;
-	--color-second: #131439;
+	--color-secondary: #131439;
+	/* --color-tertiary: rgb(45, 47, 118); */
 
 	--vt-c-indigo: #2c3e50;
 	--color-yellow-second: #d6ac04;
@@ -44,4 +45,5 @@ body {
 	color: var(--color-white-2);
 	background: var(--color-bg);
 	/* background-color: var(--color-black); */
+    overflow: hidden;
 }

@@ -1,4 +1,7 @@
 import 'element-plus/dist/index.css';
+type __VLS_Props = {
+    expenseList: ExpenseType[];
+};
 interface ExpenseType {
     amount: string;
     category: number;
@@ -10,9 +13,6 @@ interface ExpenseType {
     expanded?: boolean;
     label?: string;
 }
-type __VLS_Props = {
-    expenseList: ExpenseType[];
-};
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {
     editExpense: (...args: any[]) => void;
     removeExpense: (...args: any[]) => void;

@@ -1,13 +1,13 @@
-/// <reference types="../../node_modules/.vue-global-types/vue_3.5_false.d.ts" />
 import { ref, defineProps, computed, defineEmits } from 'vue';
 import Tree from 'primevue/tree';
 import { ElDatePicker, ElConfigProvider } from 'element-plus';
 import 'element-plus/dist/index.css';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import PieChart from './PieChart.vue';
+const props = defineProps();
+//#endregion
 const showPieChart = ref(false);
 const locale = zhCn;
-const props = defineProps();
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense']);
 // 獲取當月的第一天和最後一天
@@ -20,14 +20,13 @@ const getDateRange = () => {
     return [startOfMonth, endOfMonth];
 };
 const [rangeStart, rangeEnd] = getDateRange();
-console.log('r===', rangeStart, rangeEnd);
+// console.log('r===', rangeStart, rangeEnd)
 const start_date = ref(rangeStart);
 const end_date = ref(rangeEnd);
-// const dateRange = ref<[Date, Date] | null>(rangeStart && rangeEnd ? [rangeStart, rangeEnd] : null)
 const dateRange = ref(rangeStart && rangeEnd ? [rangeStart, rangeEnd] : undefined);
-console.log('date', dateRange.value);
+// console.log('date', dateRange.value)
 const selectedShowType = ref('show_expense');
-const categories = [
+let categories = [
     { id: 1, cate: '飲食' },
     { id: 2, cate: '日常' },
     { id: 3, cate: '交通' },
@@ -38,6 +37,9 @@ const categories = [
     { id: 8, cate: '其它3' },
     { id: 999, cate: '未分類' },
 ];
+const costomCate = JSON.parse(localStorage.getItem('customCate') || '[]');
+categories = [...categories, ...costomCate];
+console.log('categories', categories);
 const pieChartData = computed(() => {
     const { chart } = calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value);
     return chart;
@@ -52,7 +54,7 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
     const categoryMap = new Map();
     // 圓餅圖的結構
     const chartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
-    console.log('lsit', list);
+    // console.log('lsit', list)
     const filteredList = list.filter((expense) => {
         // console.log('expense', expense)
         const expenseDate = new Date(expense.date);
@@ -64,7 +66,7 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
     filteredList.forEach((expense) => {
         if (!categoryMap.has(expense.category)) {
             const category = categories.find((c) => c.id === expense.category);
-            console.log('==22=', category);
+            // console.log('==22=', category)
             // tree結構
             categoryMap.set(expense.category, {
                 key: `category-${expense.category}`, // 節點的唯一識別碼
@@ -90,12 +92,12 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
     });
     // 處理圓餅圖資料
     categoryMap.forEach((category) => {
-        console.log('===', category);
+        // console.log('===', category)
         chartData.labels.push(category.label);
         chartData.datasets[0].data.push(category.total);
         chartData.datasets[0].backgroundColor.push(getRandomColor()); // 給每個類別隨機顏色
     });
-    console.log('chartData', chartData);
+    // console.log('chartData', chartData)
     // return Array.from(categoryMap.values())
     return {
         tree: Array.from(categoryMap.values()),
@@ -109,6 +111,7 @@ const searchByDateRange = function (type) {
         const [newStartDate, newEndDate] = dateRange.value;
         start_date.value = new Date(newStartDate);
         end_date.value = new Date(newEndDate);
+        console.log(start_date.value, '-----', end_date.value);
     }
     else if (type == 'today') {
         const today = new Date();
@@ -143,10 +146,10 @@ const getRandomColor = () => {
 // const expandedKeys = ref({}) // 存放展開狀態
 const expandedKeys = ref({}); // 初始化為空對象
 const toggleCategory = (node) => {
-    console.log('node', node);
+    // console.log('node', node)
     if (node.type === 'category') {
         const key = node.key;
-        console.log('key,', key);
+        // console.log('key,', key)
         // 切換展開/收合
         if (expandedKeys.value[key]) {
             delete expandedKeys.value[key]; // 收合
@@ -157,7 +160,7 @@ const toggleCategory = (node) => {
         // 讓 Vue 重新計算，確保 UI 變更
         expandedKeys.value = { ...expandedKeys.value };
         // console.log('expandedKeys', expandedKeys)
-        console.log('分類', node.label, '展開狀態：', expandedKeys.value);
+        // console.log('分類', node.label, '展開狀態：', expandedKeys.value)
     }
 }; /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
@@ -320,15 +323,11 @@ function __VLS_template() {
             __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
                 ...{ class: ("expense_item") },
             });
-            __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-            (node);
             __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
             (node.date);
             __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
             (node.description);
-            __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({
-                ...{ class: ("") },
-            });
+            __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
             (node.amount);
             __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
                 ...{ onClick: (...[$event]) => {
@@ -355,7 +354,7 @@ function __VLS_template() {
         }
     }
     var __VLS_22;
-    ['', 'modal', 'modal_content', 'date_range_area', 'type_area', 'search_area', 'card', 'expense_tree', 'expense_cate', 'expense_total', 'expense_item', 'btn_edit', 'btn', 'fa-solid', 'fa-pen', 'btn_remove', 'btn', 'fa-solid', 'fa-trash-can',];
+    ['modal', 'modal_content', 'date_range_area', 'type_area', 'search_area', 'card', 'expense_tree', 'expense_cate', 'expense_total', 'expense_item', 'btn_edit', 'btn', 'fa-solid', 'fa-pen', 'btn_remove', 'btn', 'fa-solid', 'fa-trash-can',];
     var __VLS_slots;
     var $slots;
     let __VLS_inheritedAttrs;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from 'vue'
+import { ref, onMounted, type Ref, watch } from 'vue'
 import ExpenseList from './ExpenseList.vue'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -29,23 +29,27 @@ const categories = [
 	{ id: 3, cate: '交通' },
 	{ id: 4, cate: '娛樂' },
 	{ id: 5, cate: '其它' },
-	{ id: 6, cate: '股票' },
-	{ id: 7, cate: '其它2' },
-	{ id: 8, cate: '其它3' },
 	{ id: 999, cate: '未分類' },
 ]
+const customCate = ref<string>('')
+const customCategoriesArr = ref<{ id: number; cate: string }[]>([])
+
 const date = ref(new Date())
 const locale = zhCn
 const selectedCate = ref<number | null>(null)
+const selectedAddCate = ref<number | null>(null)
 const selectedType = ref<string>('expense')
 const myExpenseList = ref<ExpenseType[]>([])
 const isEditMode = ref<boolean>(false) // 是否為編輯模式
 const currentEditItem = ref<{ id: number } | null>(null) // 當前編輯的項目
-
 const loadStorageExpense = () => {
 	const storageExpense = localStorage.getItem('storageExpense')
 	if (storageExpense) {
 		myExpenseList.value = JSON.parse(storageExpense)
+	}
+	const storageCustomCate = localStorage.getItem('customCate')
+	if (storageCustomCate) {
+		customCategoriesArr.value = JSON.parse(storageCustomCate)
 	}
 }
 onMounted(loadStorageExpense)
@@ -72,11 +76,16 @@ const appendToInput = (value: string) => {
 const calculate = () => {
 	const operators = ['+', '-', '×', '÷']
 	const lastChar = countValue.value.slice(-1)
+
+	if (countValue.value.trim() == '') {
+		countValue.value = ''
+		return
+	}
 	if (operators.includes(lastChar)) {
 		countValue.value = countValue.value.slice(0, -1) // 去掉最後一個符號
 	}
 	try {
-		// 使用 eval 計算數學表達式
+		// eval (高風險XXX)
 		// countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
 		countValue.value = String(
 			new Function('return ' + countValue.value.replace(/÷/g, '/').replace(/×/g, '*'))(),
@@ -121,7 +130,7 @@ const saveOrUpdate = () => {
 
 		// 編輯模式下更新資料
 		if (isEditMode.value) {
-			console.log('編輯', myExpenseList.value)
+			// console.log('編輯', myExpenseList.value)
 			const index = myExpenseList.value.findIndex((item) => {
 				console.log('item', item)
 				return item.id === (currentEditItem.value ? currentEditItem.value.id : null)
@@ -131,12 +140,12 @@ const saveOrUpdate = () => {
 				myExpenseList.value[index] = expense
 			}
 		} else {
-			console.log('新增')
+			// console.log('新增')
 
 			// 新增項目
 			myExpenseList.value.push(expense)
 		}
-		// myExpenseList.value.push(expense)
+
 		localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value))
 		alert(isEditMode.value ? '更新成功' : '儲存成功')
 		countValue.value = ''
@@ -148,11 +157,76 @@ const saveOrUpdate = () => {
 		return
 	}
 
-	console.log(myExpenseList)
-	console.log(localStorage.getItem('storageExpense'))
+	// console.log(myExpenseList)
+	// console.log(localStorage.getItem('storageExpense'))
 }
+
+const showAddCategoryModal = ref(false)
+const addCategory = (cate: string) => {
+	console.log('add', selectedAddCate.value)
+
+	const isSameCate = [...categories, ...customCategoriesArr.value].some(
+		(item) => item.cate === cate,
+	)
+
+	if (isSameCate) {
+		alert('分類名稱已存在，請輸入不同的名稱')
+		return
+	}
+	if (!cate.trim()) return
+	customCate.value = ''
+	console.log('selectedAddCate.value', selectedAddCate.value)
+	if (selectedAddCate.value || selectedAddCate.value !== null) {
+		const index = customCategoriesArr.value.findIndex(
+			(item) => item.id === selectedAddCate.value,
+		)
+
+		if (index !== -1) {
+			customCategoriesArr.value[index].cate = cate
+		}
+	} else {
+		customCategoriesArr.value.push({ id: Date.now(), cate: cate })
+	}
+}
+const delCategory = (cateID: number) => {
+	console.log('刪除', cateID)
+	console.log('刪除storageExpense', myExpenseList.value)
+	const confirmCateRemove = confirm('確定刪除此類別嗎?')
+	if (confirmCateRemove) {
+		// console.log('front', customCategoriesArr.value)
+		customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID)
+		// console.log('back', customCategoriesArr.value)
+		localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value))
+		console.log('if刪除', cateID)
+		const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID)
+		console.log(delItemIndex)
+
+		if (delItemIndex !== -1) {
+			myExpenseList.value[delItemIndex].category = 999
+			localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value))
+		}
+		customCate.value = ''
+	}
+	console.log('刪除2', myExpenseList.value)
+}
+const getCategory = (cate: { id: number; cate: string }) => {
+	// console.log('get', cate)
+	console.log('get customCate.value', customCate.value)
+	customCate.value = cate.cate
+}
+watch(
+	customCategoriesArr,
+	(newVal) => {
+		localStorage.setItem('customCate', JSON.stringify(newVal))
+		// console.log('vvvv', customCategoriesArr.value)
+	},
+	{ deep: true },
+)
+
+// const isCostomCate = ref<boolean>(false)
+
 const editExpense = (expense: ExpenseType) => {
-	console.log('exxxxxedit', expense)
+	// console.log('exxxxxedit', expense)
 	isEditMode.value = true
 	currentEditItem.value = expense
 	date.value = new Date(expense.date)
@@ -162,17 +236,13 @@ const editExpense = (expense: ExpenseType) => {
 	selectedType.value = expense.type
 }
 const removeExpense = (expense: ExpenseType) => {
-	// localStorage.getItem('storageExpense')
-	console.log('removeExpense', expense)
-
 	const confirmRemove = confirm('確定刪除嗎?')
 	if (confirmRemove) {
 		myExpenseList.value = myExpenseList.value.filter((item) => item.id !== expense.id)
 		localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value))
-		console.log('remove', expense)
+		// console.log('remove', expense)
 	}
 }
-console.log('myExpenseList', myExpenseList)
 </script>
 
 <template>
@@ -210,6 +280,66 @@ console.log('myExpenseList', myExpenseList)
 					/>
 					<label :for="`cate${cate.id}`">{{ cate.cate }}</label>
 				</div>
+				<div class="category_item" v-for="cate in customCategoriesArr" :key="cate.id">
+					<input
+						v-model="selectedCate"
+						name="category"
+						:id="`cate${cate.id}`"
+						type="radio"
+						:value="cate.id"
+					/>
+					<label :for="`cate${cate.id}`">{{ cate.cate }}</label>
+				</div>
+			</div>
+			<div>
+				<button
+					class="management_btn"
+					@click="showAddCategoryModal = !showAddCategoryModal"
+				>
+					分類管理
+				</button>
+				<div class="add_category_modal" v-if="showAddCategoryModal">
+					<div class="add_category_content">
+						<h3>分類管理</h3>
+						<p>直接輸入並儲存可新增、點選該類別可編輯或刪除</p>
+						<div class="add_category_items">
+							<div
+								class="category_item"
+								v-for="cate in customCategoriesArr"
+								:key="cate.id"
+							>
+								<input
+									v-model="selectedAddCate"
+									name="add_category"
+									:id="`addcate${cate.id}`"
+									type="radio"
+									:value="cate.id"
+									@change="getCategory(cate)"
+								/>
+								<label :for="`addcate${cate.id}`">{{ cate.cate }}</label>
+							</div>
+						</div>
+						<input
+							type="text"
+							v-model="customCate"
+							placeholder="請輸入自定義類別名稱"
+						/>
+						<div>
+							<button @click="addCategory(customCate)">儲存</button>
+							<button
+								@click="selectedAddCate !== null && delCategory(selectedAddCate)"
+							>
+								刪除
+							</button>
+							<button
+								class="close_btn"
+								@click="showAddCategoryModal = !showAddCategoryModal"
+							>
+								關閉
+							</button>
+						</div>
+					</div>
+				</div>
 			</div>
 			<div class="desc_area">
 				<label for="desc">說明：</label>
@@ -217,7 +347,7 @@ console.log('myExpenseList', myExpenseList)
 			</div>
 			<div class="amount_area">
 				<input v-model="countValue" type="text" readonly class="count_input" />
-				<div class="AC" @click="clearInput">AC</div>
+				<button class="AC" @click="clearInput">AC</button>
 			</div>
 			<div class="num_area">
 				<div
@@ -247,41 +377,47 @@ console.log('myExpenseList', myExpenseList)
 :root {
 	--btn-big: 70px;
 	--btn-small: 40px;
+}
+* {
 	font-family: 'Roboto', serif;
 	font-weight: 100;
+	box-sizing: border-box;
 }
 .container {
-	box-sizing: border-box;
-
 	display: flex;
-	justify-content: center;
 	gap: 40px;
 	.left_area {
-		/* width: 100%; */
 		flex: 0.5;
 		max-width: 500px;
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-sizing: border-box;
-		/* border: 1px solid #fff; */
+		overflow-y: scroll;
+		height: 90vh;
+		padding-right: 5px;
 		& > * {
 			width: 100%;
 		}
+		&::-webkit-scrollbar {
+			/* margin-left: 20px; */
+			width: 5px;
+			/* background: var(--color-secondary); */
+			background: transparent;
+			/* background: #000; */
+		}
 
+		&::-webkit-scrollbar-thumb {
+			background: var(--color-secondary);
+		}
 		.el-input__wrapper,
 		.el-input__inner {
-			background-color: var(--color-second);
+			background-color: var(--color-secondary);
 			color: var(--color-yellow);
 			cursor: pointer;
-			font-family: 'Roboto', serif;
 			font-weight: 100;
 			font-size: 15px;
 			letter-spacing: 1px;
-			/* border: transparent solid 1px; */
-			/* border-top: 1px solid #22234c; */
-			/* border-bottom: 1px solid #22234c; */
 		}
 		.el-input__wrapper {
 			box-shadow: 0 0 0 1px #22234c inset;
@@ -291,15 +427,12 @@ console.log('myExpenseList', myExpenseList)
 		}
 		.save_btn {
 			margin-top: 15px;
-			/* line-height: 40px; */
 			height: 40px;
-			background-color: var(--color-second);
+			background-color: var(--color-secondary);
 			width: 289px;
+			padding: 10px;
 			color: var(--color-yellow);
-			/* border: 1px solid #22234c;
-			border-radius: 5px;
-			cursor: pointer; */
-			@include border5;
+			@include mainColorBtn;
 			&:hover {
 				background-color: #22234c;
 			}
@@ -309,8 +442,6 @@ console.log('myExpenseList', myExpenseList)
 			justify-content: center;
 			margin-bottom: 10px;
 			& > label {
-				/* background-color: transparent; */
-				/* border: none; */
 				padding: 4px;
 				margin: 0 10px;
 				border-bottom: 3px solid transparent;
@@ -326,30 +457,102 @@ console.log('myExpenseList', myExpenseList)
 	}
 	.right_area {
 		flex: 1;
-		/* margin-left: 2rem; */
 	}
 }
+.management_btn {
+	@include yellowBtn;
+	padding: 5px 0;
+	width: 100%;
+	margin-bottom: 15px;
+	&:hover {
+		background-color: var(--color-yellow-second);
+	}
+}
+.add_category {
+	&_items {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-bottom: 15px;
+	}
+	&_modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 99;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		@include flexCenter;
+	}
+	&_content {
+		width: 500px;
+		background-color: var(--color-main);
+		padding: 20px;
+		border-radius: 5px;
+		text-align: center;
+		color: var(--color-gray-light);
 
+		.category_item > label {
+			background-color: var(--color-secondary);
+		}
+
+		& > p {
+			font-size: 14px;
+			margin-bottom: 10px;
+		}
+		& > input {
+			margin-bottom: 15px;
+			/* width: 80%; */
+			height: 40px;
+			padding: 10px;
+			outline: none;
+			font-weight: 100;
+			@include inputAndBtnType;
+			background-color: var(--color-secondary);
+			/* border: rgb(183, 154, 25) 1px solid; */
+			width: 100%;
+		}
+		& > div > button {
+			/* display: block; */
+			@include mainColorBtn;
+			padding: 5px 10px;
+			border: none;
+			background-color: rgb(103, 1, 1);
+
+			&:first-of-type {
+				margin: 3px;
+				background-color: rgb(3, 67, 3);
+			}
+			&:last-of-type {
+				margin: 3px;
+				background-color: rgb(55, 55, 55);
+			}
+		}
+	}
+}
 .category {
 	display: flex;
-	flex-wrap: wrap;
 	justify-content: left;
-	padding: 10px;
+	flex-wrap: wrap;
+	padding: 15px 10px;
 	gap: 8px;
+	& > button {
+		@include flexCenter;
+		@include yellowBtn;
+		width: var(--btn-small);
+		height: var(--btn-small);
+		font-size: 20px;
+		&:hover {
+			background-color: var(--color-yellow-second);
+		}
+	}
 	&_item {
-		/* margin: 20px; */
-		/* flex: 1; */
-		/* margin-bottom: 15px; */
-		display: flex;
-		align-items: center;
+		@include flexCenter;
+
 		& > label {
-			/* font-size: large; */
-			background-color: var(--color-second);
+			@include mainColorBtn;
 			padding: 8px;
-			/* cursor: pointer;
-			border: 1px solid #22234c;
-			border-radius: 5px; */
-			@include border5;
 			color: var(--color-white);
 			letter-spacing: 1px;
 			&:hover {
@@ -361,102 +564,67 @@ console.log('myExpenseList', myExpenseList)
 		}
 		& > input:checked + label {
 			background-color: var(--color-yellow);
-			color: var(--color-second);
+			color: var(--color-secondary);
 		}
 	}
 }
 .amount_area {
-	display: flex;
+	@include flexCenter;
 	margin-bottom: 15px;
-	align-items: center;
 	gap: 15px;
-	justify-content: center;
+
 	.count_input {
-		/* width: 100%; */
-		/* flex: 1; */
-		padding: 10px;
-		font-size: 20px;
-		font-weight: 100;
-
-		outline: none;
-		/* border: 1px solid #22234c;
-		border-radius: 5px; */
-
-		@include border5;
-		cursor: not-allowed;
-
-		text-align: right;
 		height: 40px;
-		color: var(--color-white);
-		background-color: var(--color-second);
-
-		font-family: 'Roboto', serif;
+		width: 100%;
+		padding: 10px;
+		font-size: 16px;
 		font-weight: 100;
+		text-align: right;
+		outline: none;
+		color: var(--color-white);
+		cursor: not-allowed;
+		@include mainColorBtn;
 	}
 	.AC {
-		border-radius: 5px;
-		/* margin-left: 10px; */
-		/* width: 40px; */
-		/* height: 40px; */
 		width: var(--btn-small);
 		height: var(--btn-small);
-		/* width: 20%; */
-		background-color: var(--color-yellow);
-		color: var(--color-second);
-		cursor: pointer;
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		font-weight: 300;
+		@include flexCenter;
+		@include yellowBtn;
+
 		&:hover {
 			background-color: var(--color-yellow-second);
 		}
 	}
 }
 .desc_area {
-	display: flex;
-	justify-content: center;
-	align-items: center;
+	@include flexCenter;
 	margin-bottom: 15px;
 	color: var(--color-white);
 	.desc_input {
-		padding: 10px;
-		/* font-size: 20px; */
-		outline: none;
-		border: 1px solid #22234c;
-		border-radius: 5px;
-		height: 40px;
-		color: var(--color-white);
-		background-color: var(--color-second);
-		font-family: 'Roboto', serif;
-		font-weight: 100;
 		width: 80%;
+		height: 40px;
+		padding: 10px;
+		outline: none;
+		font-weight: 100;
+		@include inputAndBtnType;
 	}
 }
 .num_area {
 	display: grid;
 	grid-template-columns: repeat(4, var(--btn-big));
 	width: 100%;
-	/* align-content: center; */
-	justify-items: center;
 	justify-content: center;
 	gap: 3px;
 
 	.num {
 		width: var(--btn-big);
 		height: var(--btn-big);
-		/* margin: 5px; */
-		/* width: 100%; */
-		/* height: 100%; */
-		border-radius: 5px;
-		border: 1px solid #22234c;
 		font-size: 20px;
-		background-color: var(--color-second);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		cursor: pointer;
-		color: var(--color-yellow);
 		font-weight: 100;
+		color: var(--color-yellow);
+		@include flexCenter;
+		@include mainColorBtn;
 
 		&:hover {
 			background-color: #22234c;

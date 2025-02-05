@@ -23,7 +23,7 @@ a {
 
 @media (hover: hover) {
   a:hover {
-    background-color: var(--color-second);
+    background-color: var(--color-secondary);
   }
 }
 /* 

@@ -86,7 +86,7 @@ const options = {
 </template>
 <style scoped>
 p {
-	color: var(--color-second);
+	color: var(--color-secondary);
 	font-weight: bold;
 }
 </style>

@@ -1,4 +1,3 @@
-/// <reference types="../../node_modules/.vue-global-types/vue_3.5_false.d.ts" />
 import ExpenseForm from '../components/ExpenseForm.vue';
 function __VLS_template() {
     const __VLS_ctx = {};

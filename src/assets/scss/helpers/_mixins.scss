@@ -1,5 +1,21 @@
-@mixin border5 {
+@mixin mainColorBtn {
+	cursor: pointer;
+	@include inputAndBtnType;
+}
+@mixin inputAndBtnType {
 	border: 1px solid #22234c;
 	border-radius: 5px;
+	background-color: var(--color-secondary);
+}
+@mixin yellowBtn {
+	border: none;
+	border-radius: 5px;
+	background-color: var(--color-yellow);
+	color: var(--color-secondary);
 	cursor: pointer;
+}
+@mixin flexCenter {
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }

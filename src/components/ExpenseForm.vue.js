@@ -1,5 +1,4 @@
-/// <reference types="../../node_modules/.vue-global-types/vue_3.5_false.d.ts" />
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import ExpenseList from './ExpenseList.vue';
 import { ElDatePicker, ElConfigProvider } from 'element-plus';
 import 'element-plus/dist/index.css';
@@ -15,14 +14,14 @@ const categories = [
     { id: 3, cate: '交通' },
     { id: 4, cate: '娛樂' },
     { id: 5, cate: '其它' },
-    { id: 6, cate: '股票' },
-    { id: 7, cate: '其它2' },
-    { id: 8, cate: '其它3' },
     { id: 999, cate: '未分類' },
 ];
+const customCate = ref('');
+const customCategoriesArr = ref([]);
 const date = ref(new Date());
 const locale = zhCn;
 const selectedCate = ref(null);
+const selectedAddCate = ref(null);
 const selectedType = ref('expense');
 const myExpenseList = ref([]);
 const isEditMode = ref(false); // 是否為編輯模式
@@ -31,6 +30,10 @@ const loadStorageExpense = () => {
     const storageExpense = localStorage.getItem('storageExpense');
     if (storageExpense) {
         myExpenseList.value = JSON.parse(storageExpense);
+    }
+    const storageCustomCate = localStorage.getItem('customCate');
+    if (storageCustomCate) {
+        customCategoriesArr.value = JSON.parse(storageCustomCate);
     }
 };
 onMounted(loadStorageExpense);
@@ -56,11 +59,15 @@ const appendToInput = (value) => {
 const calculate = () => {
     const operators = ['+', '-', '×', '÷'];
     const lastChar = countValue.value.slice(-1);
+    if (countValue.value.trim() == '') {
+        countValue.value = '';
+        return;
+    }
     if (operators.includes(lastChar)) {
         countValue.value = countValue.value.slice(0, -1); // 去掉最後一個符號
     }
     try {
-        // 使用 eval 計算數學表達式
+        // eval (高風險XXX)
         // countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
         countValue.value = String(new Function('return ' + countValue.value.replace(/÷/g, '/').replace(/×/g, '*'))());
     }
@@ -100,7 +107,7 @@ const saveOrUpdate = () => {
         };
         // 編輯模式下更新資料
         if (isEditMode.value) {
-            console.log('編輯', myExpenseList.value);
+            // console.log('編輯', myExpenseList.value)
             const index = myExpenseList.value.findIndex((item) => {
                 console.log('item', item);
                 return item.id === (currentEditItem.value ? currentEditItem.value.id : null);
@@ -111,11 +118,10 @@ const saveOrUpdate = () => {
             }
         }
         else {
-            console.log('新增');
+            // console.log('新增')
             // 新增項目
             myExpenseList.value.push(expense);
         }
-        // myExpenseList.value.push(expense)
         localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
         alert(isEditMode.value ? '更新成功' : '儲存成功');
         countValue.value = '';
@@ -127,11 +133,63 @@ const saveOrUpdate = () => {
         alert('請輸入金額');
         return;
     }
-    console.log(myExpenseList);
-    console.log(localStorage.getItem('storageExpense'));
+    // console.log(myExpenseList)
+    // console.log(localStorage.getItem('storageExpense'))
 };
+const showAddCategoryModal = ref(false);
+const addCategory = (cate) => {
+    console.log('add', selectedAddCate.value);
+    const isSameCate = [...categories, ...customCategoriesArr.value].some((item) => item.cate === cate);
+    if (isSameCate) {
+        alert('分類名稱已存在，請輸入不同的名稱');
+        return;
+    }
+    if (!cate.trim())
+        return;
+    customCate.value = '';
+    console.log('selectedAddCate.value', selectedAddCate.value);
+    if (selectedAddCate.value || selectedAddCate.value !== null) {
+        const index = customCategoriesArr.value.findIndex((item) => item.id === selectedAddCate.value);
+        if (index !== -1) {
+            customCategoriesArr.value[index].cate = cate;
+        }
+    }
+    else {
+        customCategoriesArr.value.push({ id: Date.now(), cate: cate });
+    }
+};
+const delCategory = (cateID) => {
+    console.log('刪除', cateID);
+    console.log('刪除storageExpense', myExpenseList.value);
+    const confirmCateRemove = confirm('確定刪除此類別嗎?');
+    if (confirmCateRemove) {
+        // console.log('front', customCategoriesArr.value)
+        customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID);
+        // console.log('back', customCategoriesArr.value)
+        localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value));
+        console.log('if刪除', cateID);
+        const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID);
+        console.log(delItemIndex);
+        if (delItemIndex !== -1) {
+            myExpenseList.value[delItemIndex].category = 999;
+            localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
+        }
+        customCate.value = '';
+    }
+    console.log('刪除2', myExpenseList.value);
+};
+const getCategory = (cate) => {
+    // console.log('get', cate)
+    console.log('get customCate.value', customCate.value);
+    customCate.value = cate.cate;
+};
+watch(customCategoriesArr, (newVal) => {
+    localStorage.setItem('customCate', JSON.stringify(newVal));
+    // console.log('vvvv', customCategoriesArr.value)
+}, { deep: true });
+// const isCostomCate = ref<boolean>(false)
 const editExpense = (expense) => {
-    console.log('exxxxxedit', expense);
+    // console.log('exxxxxedit', expense)
     isEditMode.value = true;
     currentEditItem.value = expense;
     date.value = new Date(expense.date);
@@ -141,16 +199,13 @@ const editExpense = (expense) => {
     selectedType.value = expense.type;
 };
 const removeExpense = (expense) => {
-    // localStorage.getItem('storageExpense')
-    console.log('removeExpense', expense);
     const confirmRemove = confirm('確定刪除嗎?');
     if (confirmRemove) {
         myExpenseList.value = myExpenseList.value.filter((item) => item.id !== expense.id);
         localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
-        console.log('remove', expense);
+        // console.log('remove', expense)
     }
-};
-console.log('myExpenseList', myExpenseList); /* PartiallyEnd: #3632/scriptSetup.vue */
+}; /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
     const __VLS_ctx = {};
     let __VLS_components;
@@ -233,6 +288,93 @@ function __VLS_template() {
         });
         (cate.cate);
     }
+    for (const [cate] of __VLS_getVForSourceType((__VLS_ctx.customCategoriesArr))) {
+        __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: ("category_item") },
+            key: ((cate.id)),
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.input)({
+            name: ("category"),
+            id: ((`cate${cate.id}`)),
+            type: ("radio"),
+            value: ((cate.id)),
+        });
+        (__VLS_ctx.selectedCate);
+        __VLS_elementAsFunction(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
+            for: ((`cate${cate.id}`)),
+        });
+        (cate.cate);
+    }
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
+    __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+        ...{ onClick: (...[$event]) => {
+                __VLS_ctx.showAddCategoryModal = !__VLS_ctx.showAddCategoryModal;
+            } },
+        ...{ class: ("management_btn") },
+    });
+    if (__VLS_ctx.showAddCategoryModal) {
+        __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: ("add_category_modal") },
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: ("add_category_content") },
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.h3, __VLS_intrinsicElements.h3)({});
+        __VLS_elementAsFunction(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({});
+        __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: ("add_category_items") },
+        });
+        for (const [cate] of __VLS_getVForSourceType((__VLS_ctx.customCategoriesArr))) {
+            __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+                ...{ class: ("category_item") },
+                key: ((cate.id)),
+            });
+            __VLS_elementAsFunction(__VLS_intrinsicElements.input)({
+                ...{ onChange: (...[$event]) => {
+                        if (!((__VLS_ctx.showAddCategoryModal)))
+                            return;
+                        __VLS_ctx.getCategory(cate);
+                    } },
+                name: ("add_category"),
+                id: ((`addcate${cate.id}`)),
+                type: ("radio"),
+                value: ((cate.id)),
+            });
+            (__VLS_ctx.selectedAddCate);
+            __VLS_elementAsFunction(__VLS_intrinsicElements.label, __VLS_intrinsicElements.label)({
+                for: ((`addcate${cate.id}`)),
+            });
+            (cate.cate);
+        }
+        __VLS_elementAsFunction(__VLS_intrinsicElements.input)({
+            type: ("text"),
+            value: ((__VLS_ctx.customCate)),
+            placeholder: ("請輸入自定義類別名稱"),
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
+        __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+            ...{ onClick: (...[$event]) => {
+                    if (!((__VLS_ctx.showAddCategoryModal)))
+                        return;
+                    __VLS_ctx.addCategory(__VLS_ctx.customCate);
+                } },
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+            ...{ onClick: (...[$event]) => {
+                    if (!((__VLS_ctx.showAddCategoryModal)))
+                        return;
+                    __VLS_ctx.selectedAddCate !== null && __VLS_ctx.delCategory(__VLS_ctx.selectedAddCate);
+                } },
+        });
+        __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+            ...{ onClick: (...[$event]) => {
+                    if (!((__VLS_ctx.showAddCategoryModal)))
+                        return;
+                    __VLS_ctx.showAddCategoryModal = !__VLS_ctx.showAddCategoryModal;
+                } },
+            ...{ class: ("close_btn") },
+        });
+    }
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
         ...{ class: ("desc_area") },
     });
@@ -254,7 +396,7 @@ function __VLS_template() {
         readonly: (true),
         ...{ class: ("count_input") },
     });
-    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+    __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
         ...{ onClick: (__VLS_ctx.clearInput) },
         ...{ class: ("AC") },
     });
@@ -302,7 +444,7 @@ function __VLS_template() {
     let __VLS_14;
     let __VLS_15;
     var __VLS_16;
-    ['container', 'left_area', 'type_area', 'category', 'category_item', 'desc_area', 'desc_input', 'amount_area', 'count_input', 'AC', 'num_area', 'num', 'save_btn', 'right_area',];
+    ['container', 'left_area', 'type_area', 'category', 'category_item', 'category_item', 'management_btn', 'add_category_modal', 'add_category_content', 'add_category_items', 'category_item', 'close_btn', 'desc_area', 'desc_input', 'amount_area', 'count_input', 'AC', 'num_area', 'num', 'save_btn', 'right_area',];
     var __VLS_slots;
     var $slots;
     let __VLS_inheritedAttrs;
@@ -328,9 +470,12 @@ const __VLS_self = (await import('vue')).defineComponent({
             descValue: descValue,
             buttons: buttons,
             categories: categories,
+            customCate: customCate,
+            customCategoriesArr: customCategoriesArr,
             date: date,
             locale: locale,
             selectedCate: selectedCate,
+            selectedAddCate: selectedAddCate,
             selectedType: selectedType,
             myExpenseList: myExpenseList,
             isEditMode: isEditMode,
@@ -338,6 +483,10 @@ const __VLS_self = (await import('vue')).defineComponent({
             calculate: calculate,
             clearInput: clearInput,
             saveOrUpdate: saveOrUpdate,
+            showAddCategoryModal: showAddCategoryModal,
+            addCategory: addCategory,
+            delCategory: delCategory,
+            getCategory: getCategory,
             editExpense: editExpense,
             removeExpense: removeExpense,
         };
