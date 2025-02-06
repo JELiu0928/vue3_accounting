@@ -4,21 +4,23 @@ import ExpenseList from './ExpenseList.vue'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import  { ExpenseType } from '@/interfaces/ExpenseType'
 // 定義 input 欄位的值
 const countValue = ref<string>('')
 const descValue = ref<string>('')
-interface ExpenseType {
-	// 根據實際資料結構設置屬性
-	id: number
-	key?: number | string
-	amount: string
-	category: number
-	date: string
-	description: string
-	type: string
-	expanded?: boolean
-	label?: string
-}
+// interface ExpenseType {
+// 	// 根據實際資料結構設置屬性
+// 	id: number
+// 	key?: number | string
+// 	amount: string
+// 	category: number
+// 	date: string
+// 	description: string
+// 	type: string
+// 	expanded?: boolean
+// 	label?: string
+// }
+// console.log('type===',ExpenseType)
 interface Category_id {
 	id: number
 	cate: string
@@ -35,7 +37,7 @@ const categories = [
 ]
 const customCate = ref<string>('')
 const customCategoriesArr = ref<{ id: number; cate: string }[]>([])
-
+const allCategoryArr = ref<{ id: number; cate: string }[]>([])
 const date = ref(new Date())
 const locale = zhCn
 const selectedCate = ref<number | null>(null)
@@ -59,7 +61,7 @@ onMounted(loadStorageExpense)
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value: string) => {
 	const operators = ['+', '-', '×', '÷']
-	console.log('countValue.value', countValue.value)
+	// console.log('countValue.value', countValue.value)
 	const lastChar = countValue.value.slice(-1)
 
 	if (operators.includes(value)) {
@@ -177,7 +179,6 @@ const addCategory = (cate: string) => {
 	}
 	if (!cate.trim()) return
 	customCate.value = ''
-	console.log('selectedAddCate.value', selectedAddCate.value)
 	if (selectedAddCate.value || selectedAddCate.value !== null) {
 		const index = customCategoriesArr.value.findIndex(
 			(item) => item.id === selectedAddCate.value,
@@ -189,19 +190,21 @@ const addCategory = (cate: string) => {
 	} else {
 		customCategoriesArr.value.push({ id: Date.now(), cate: cate })
 	}
+   
+
 }
 const delCategory = (cateID: number) => {
-	console.log('刪除', cateID)
-	console.log('刪除storageExpense', myExpenseList.value)
+	// console.log('刪除', cateID)
+	// console.log('刪除storageExpense', myExpenseList.value)
 	const confirmCateRemove = confirm('確定刪除此類別嗎?')
 	if (confirmCateRemove) {
 		// console.log('front', customCategoriesArr.value)
 		customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID)
 		// console.log('back', customCategoriesArr.value)
 		localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value))
-		console.log('if刪除', cateID)
+		// console.log('if刪除', cateID)
 		const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID)
-		console.log(delItemIndex)
+		// console.log(delItemIndex)
 
 		if (delItemIndex !== -1) {
 			myExpenseList.value[delItemIndex].category = 999
@@ -209,18 +212,26 @@ const delCategory = (cateID: number) => {
 		}
 		customCate.value = ''
 	}
-	console.log('刪除2', myExpenseList.value)
+	// console.log('刪除2', myExpenseList.value)
 }
+const closeAddCateModal = (()=>{
+    showAddCategoryModal.value = !showAddCategoryModal.value
+    selectedAddCate.value = null
+    customCate.value = ''
+})
 const getCategory = (cate: { id: number; cate: string }) => {
-	// console.log('get', cate)
-	console.log('get customCate.value', customCate.value)
 	customCate.value = cate.cate
 }
 watch(
 	customCategoriesArr,
 	(newVal) => {
+        console.log('設置customCate')
 		localStorage.setItem('customCate', JSON.stringify(newVal))
 		// console.log('vvvv', customCategoriesArr.value)
+        const costomCateArr: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
+        console.log('costomCateArr',costomCateArr)
+        allCategoryArr.value = [...categories,...costomCateArr]
+        console.log('allCategoryArr',allCategoryArr.value)
 	},
 	{ deep: true },
 )
@@ -228,7 +239,8 @@ watch(
 // const isCostomCate = ref<boolean>(false)
 
 const editExpense = (expense: ExpenseType) => {
-	// console.log('exxxxxedit', expense)
+	console.log('exxxxxedit', expense)
+console.log('selectedType.value',selectedType.value)
 	isEditMode.value = true
 	currentEditItem.value = expense
 	date.value = new Date(expense.date)
@@ -335,7 +347,7 @@ const removeExpense = (expense: ExpenseType) => {
 							</button>
 							<button
 								class="close_btn"
-								@click="showAddCategoryModal = !showAddCategoryModal"
+								@click="closeAddCateModal"
 							>
 								關閉
 							</button>
@@ -369,8 +381,10 @@ const removeExpense = (expense: ExpenseType) => {
 		<div class="right_area">
 			<ExpenseList
 				:expenseList="myExpenseList"
+				:allCategoryArr="allCategoryArr"
 				@editExpense="editExpense"
 				@removeExpense="removeExpense"
+
 			/>
 		</div>
 	</div>

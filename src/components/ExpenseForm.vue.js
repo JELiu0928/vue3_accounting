@@ -18,6 +18,7 @@ const categories = [
 ];
 const customCate = ref('');
 const customCategoriesArr = ref([]);
+const allCategoryArr = ref([]);
 const date = ref(new Date());
 const locale = zhCn;
 const selectedCate = ref(null);
@@ -40,7 +41,7 @@ onMounted(loadStorageExpense);
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value) => {
     const operators = ['+', '-', '×', '÷'];
-    console.log('countValue.value', countValue.value);
+    // console.log('countValue.value', countValue.value)
     const lastChar = countValue.value.slice(-1);
     if (operators.includes(value)) {
         if (operators.includes(lastChar)) {
@@ -147,7 +148,6 @@ const addCategory = (cate) => {
     if (!cate.trim())
         return;
     customCate.value = '';
-    console.log('selectedAddCate.value', selectedAddCate.value);
     if (selectedAddCate.value || selectedAddCate.value !== null) {
         const index = customCategoriesArr.value.findIndex((item) => item.id === selectedAddCate.value);
         if (index !== -1) {
@@ -159,37 +159,46 @@ const addCategory = (cate) => {
     }
 };
 const delCategory = (cateID) => {
-    console.log('刪除', cateID);
-    console.log('刪除storageExpense', myExpenseList.value);
+    // console.log('刪除', cateID)
+    // console.log('刪除storageExpense', myExpenseList.value)
     const confirmCateRemove = confirm('確定刪除此類別嗎?');
     if (confirmCateRemove) {
         // console.log('front', customCategoriesArr.value)
         customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID);
         // console.log('back', customCategoriesArr.value)
         localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value));
-        console.log('if刪除', cateID);
+        // console.log('if刪除', cateID)
         const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID);
-        console.log(delItemIndex);
+        // console.log(delItemIndex)
         if (delItemIndex !== -1) {
             myExpenseList.value[delItemIndex].category = 999;
             localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
         }
         customCate.value = '';
     }
-    console.log('刪除2', myExpenseList.value);
+    // console.log('刪除2', myExpenseList.value)
 };
+const closeAddCateModal = (() => {
+    showAddCategoryModal.value = !showAddCategoryModal.value;
+    selectedAddCate.value = null;
+    customCate.value = '';
+});
 const getCategory = (cate) => {
-    // console.log('get', cate)
-    console.log('get customCate.value', customCate.value);
     customCate.value = cate.cate;
 };
 watch(customCategoriesArr, (newVal) => {
+    console.log('設置customCate');
     localStorage.setItem('customCate', JSON.stringify(newVal));
     // console.log('vvvv', customCategoriesArr.value)
+    const costomCateArr = JSON.parse(localStorage.getItem('customCate') || '[]');
+    console.log('costomCateArr', costomCateArr);
+    allCategoryArr.value = [...categories, ...costomCateArr];
+    console.log('allCategoryArr', allCategoryArr.value);
 }, { deep: true });
 // const isCostomCate = ref<boolean>(false)
 const editExpense = (expense) => {
-    // console.log('exxxxxedit', expense)
+    console.log('exxxxxedit', expense);
+    console.log('selectedType.value', selectedType.value);
     isEditMode.value = true;
     currentEditItem.value = expense;
     date.value = new Date(expense.date);
@@ -367,11 +376,7 @@ function __VLS_template() {
                 } },
         });
         __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
-            ...{ onClick: (...[$event]) => {
-                    if (!((__VLS_ctx.showAddCategoryModal)))
-                        return;
-                    __VLS_ctx.showAddCategoryModal = !__VLS_ctx.showAddCategoryModal;
-                } },
+            ...{ onClick: (__VLS_ctx.closeAddCateModal) },
             ...{ class: ("close_btn") },
         });
     }
@@ -428,11 +433,13 @@ function __VLS_template() {
         ...{ 'onEditExpense': {} },
         ...{ 'onRemoveExpense': {} },
         expenseList: ((__VLS_ctx.myExpenseList)),
+        allCategoryArr: ((__VLS_ctx.allCategoryArr)),
     }));
     const __VLS_13 = __VLS_12({
         ...{ 'onEditExpense': {} },
         ...{ 'onRemoveExpense': {} },
         expenseList: ((__VLS_ctx.myExpenseList)),
+        allCategoryArr: ((__VLS_ctx.allCategoryArr)),
     }, ...__VLS_functionalComponentArgsRest(__VLS_12));
     let __VLS_17;
     const __VLS_18 = {
@@ -472,6 +479,7 @@ const __VLS_self = (await import('vue')).defineComponent({
             categories: categories,
             customCate: customCate,
             customCategoriesArr: customCategoriesArr,
+            allCategoryArr: allCategoryArr,
             date: date,
             locale: locale,
             selectedCate: selectedCate,
@@ -486,6 +494,7 @@ const __VLS_self = (await import('vue')).defineComponent({
             showAddCategoryModal: showAddCategoryModal,
             addCategory: addCategory,
             delCategory: delCategory,
+            closeAddCateModal: closeAddCateModal,
             getCategory: getCategory,
             editExpense: editExpense,
             removeExpense: removeExpense,

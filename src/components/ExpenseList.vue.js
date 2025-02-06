@@ -6,6 +6,16 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import PieChart from './PieChart.vue';
 import Excel from './Excel.vue';
 const props = defineProps();
+// console.log('List____props',props)
+// console.log('List____props.allCategoryArr',props.allCategoryArr)
+// //#region interface ___ start
+// nextTick(()=>{
+//     console.log('nextTick____props.allCategoryArr',props.allCategoryArr)
+//     console.log('nextTick____props.allCategoryArr.value',props.allCategoryArr.value)
+// })
+watch(props.allCategoryArr, (newVal) => {
+    console.log("allCategoryArr 變動了:", newVal);
+}, { deep: true });
 //#endregion
 const showPieChart = ref(false);
 const locale = zhCn;
@@ -21,7 +31,7 @@ const getDateRange = () => {
     return [startOfMonth, endOfMonth];
 };
 const [rangeStart, rangeEnd] = getDateRange();
-console.log('r===', rangeStart, rangeEnd);
+// console.log('r===', rangeStart, rangeEnd)
 const start_date = ref(rangeStart);
 const end_date = ref(rangeEnd);
 const dateRange = ref(rangeStart && rangeEnd ? [rangeStart, rangeEnd] : undefined);
@@ -33,13 +43,14 @@ let categories = [
     { id: 3, cate: '交通' },
     { id: 4, cate: '娛樂' },
     { id: 5, cate: '其它' },
-    { id: 6, cate: '股票' },
-    { id: 7, cate: '其它2' },
-    { id: 8, cate: '其它3' },
+    // { id: 6, cate: '股票' },
+    // { id: 7, cate: '其它2' },
+    // { id: 8, cate: '其它3' },
     { id: 999, cate: '未分類' },
 ];
 const costomCate = JSON.parse(localStorage.getItem('customCate') || '[]');
 categories = [...categories, ...costomCate];
+// 
 console.log('categories', categories);
 const calculateTreeData = function (list, startDate, endDate, showType) {
     // 存放每個分類的帳目
@@ -54,10 +65,12 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         const isCorrectType = showType === 'show_expense' ? expense.type === 'expense' : expense.type === 'income';
         return isInDateRange && isCorrectType;
     });
-    // return
+    // nextTick(()=>{
     filteredList.forEach((expense) => {
+        console.log('props.allCategoryArr.value=========', props.allCategoryArr);
         if (!categoryMap.has(expense.category)) {
-            const category = categories.find((c) => c.id === expense.category);
+            const category = props.allCategoryArr.find((c) => c.id === expense.category);
+            // const category = categories.find((c: Category_id) => c.id === expense.category)
             // console.log('==22=', category)
             // tree結構
             categoryMap.set(expense.category, {
@@ -74,7 +87,7 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         categoryNode.children.push({
             key: expense.id,
             id: expense.id,
-            type: 'expense',
+            type: expense.type,
             date: expense.date,
             description: expense.description,
             amount: String(expense.amount),
@@ -82,15 +95,20 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         });
         categoryNode.total += parseInt(expense.amount);
     });
+    // })
+    console.log('categoryMap', categoryMap);
+    //日期排序：舊~新
+    categoryMap.forEach((category) => {
+        //轉時間戳之後大小排序
+        category.children.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    });
     // 處理圓餅圖資料
     categoryMap.forEach((category) => {
         // console.log('===', category)
         chartData.labels.push(category.label);
         chartData.datasets[0].data.push(category.total);
-        chartData.datasets[0].backgroundColor.push(getRandomColor()); // 給每個類別隨機顏色
+        chartData.datasets[0].backgroundColor.push(getRandomColor());
     });
-    // console.log('chartData', chartData)
-    // return Array.from(categoryMap.values())
     return {
         tree: Array.from(categoryMap.values()),
         chart: chartData,
@@ -101,8 +119,6 @@ const pieChartData = computed(() => {
     return chart;
 });
 const treeData = computed(() => {
-    // console.log(start_date.value)
-    // console.log('treeData start_date.value,=', start_date.value,)
     return calculateTreeData(props.expenseList || [], start_date.value, end_date.value, selectedShowType.value).tree;
 });
 // console.log('treeData=', treeData)

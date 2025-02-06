@@ -16,10 +16,20 @@ import Excel from './Excel.vue'
 // console.log('ExpenseType 已加載', ExpenseType)
 
 const props = defineProps<{
-	expenseList: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
+	expenseList: ExpenseType[], // 指定 expenseList 的型別為 ExpenseType[]
+	allCategoryArr: Category_id[] // 指定 expenseList 的型別為 ExpenseType[]
 }>()
+// console.log('List____props',props)
+// console.log('List____props.allCategoryArr',props.allCategoryArr)
+// //#region interface ___ start
+// nextTick(()=>{
+//     console.log('nextTick____props.allCategoryArr',props.allCategoryArr)
+//     console.log('nextTick____props.allCategoryArr.value',props.allCategoryArr.value)
 
-//#region interface ___ start
+// })
+watch(props.allCategoryArr, (newVal) => {
+  console.log("allCategoryArr 變動了:", newVal);
+}, { deep: true });
 interface ExpenseType {
 	// 根據實際資料結構設置屬性
 	amount: string
@@ -73,7 +83,7 @@ const getDateRange = () => {
 	return [startOfMonth, endOfMonth]
 }
 const [rangeStart, rangeEnd] = getDateRange()
-console.log('r===', rangeStart, rangeEnd)
+// console.log('r===', rangeStart, rangeEnd)
 const start_date = ref<Date>(rangeStart)
 const end_date = ref<Date>(rangeEnd)
 const dateRange = ref<[Date, Date] | undefined>(
@@ -88,15 +98,15 @@ let categories: Category_id[] = [
 	{ id: 3, cate: '交通' },
 	{ id: 4, cate: '娛樂' },
 	{ id: 5, cate: '其它' },
-	{ id: 6, cate: '股票' },
-	{ id: 7, cate: '其它2' },
-	{ id: 8, cate: '其它3' },
+	// { id: 6, cate: '股票' },
+	// { id: 7, cate: '其它2' },
+	// { id: 8, cate: '其它3' },
 	{ id: 999, cate: '未分類' },
 ]
 
 const costomCate: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
 categories = [...categories, ...costomCate]
-
+// 
 console.log('categories', categories)
 
 
@@ -114,7 +124,6 @@ const calculateTreeData = function (
 	// console.log('lsit', list)
 	const filteredList = list.filter((expense: ExpenseType) => {
 		// console.log('expense', expense)
-
 		const expenseDate = new Date(expense.date)
 		const isInDateRange = startDate <= expenseDate && expenseDate <= endDate
 		const isCorrectType =
@@ -123,44 +132,56 @@ const calculateTreeData = function (
 		return isInDateRange && isCorrectType
 	})
 
-	// return
-	filteredList.forEach((expense: ExpenseType) => {
-		if (!categoryMap.has(expense.category)) {
-			const category = categories.find((c: Category_id) => c.id === expense.category)
-			// console.log('==22=', category)
+	// nextTick(()=>{
+        filteredList.forEach((expense: ExpenseType) => {
+            console.log('props.allCategoryArr.value=========',props.allCategoryArr)
+            if (!categoryMap.has(expense.category)) {
+                const category = props.allCategoryArr.find((c: Category_id) =>  c.id === expense.category)
+                // const category = categories.find((c: Category_id) => c.id === expense.category)
+                // console.log('==22=', category)
 
-			// tree結構
-			categoryMap.set(expense.category, {
-				key: `category-${expense.category}`, // 節點的唯一識別碼
-				label: category ? category.cate : '未分類', // 顯示的名稱
-				type: 'category', // 節點類型
-				total: 0, // 該分類的總金額
-				expanded: true, // 是否展開該分類節點
-				children: [], // 該分類底下的支出項目
-			})
-		}
-		const categoryNode = categoryMap.get(expense.category)
-		//子節點
-		categoryNode.children.push({
-			key: expense.id,
-			id: expense.id,
-			type: 'expense',
-			date: expense.date,
-			description: expense.description,
-			amount: String(expense.amount),
-			category: expense.category,
-		})
-		categoryNode.total += parseInt(expense.amount)
+                // tree結構
+                categoryMap.set(expense.category, {
+                    key: `category-${expense.category}`, // 節點的唯一識別碼
+                    label: category ? category.cate : '未分類', // 顯示的名稱
+                    type: 'category', // 節點類型
+                    total: 0, // 該分類的總金額
+                    expanded: true, // 是否展開該分類節點
+                    children: [], // 該分類底下的支出項目
+                })
+            }
+            const categoryNode = categoryMap.get(expense.category)
+            //子節點
+            categoryNode.children.push({
+                key: expense.id,
+                id: expense.id,
+                type: expense.type,
+                date: expense.date,
+                description: expense.description,
+                amount: String(expense.amount),
+                category: expense.category,
+            })
+            categoryNode.total += parseInt(expense.amount)
+        })
+    // })
+        
+    
+    
+    console.log('categoryMap',categoryMap)
+    //日期排序：舊~新
+    categoryMap.forEach((category: Category) => {
+		//轉時間戳之後大小排序
+        category.children.sort((a:ExpenseType, b:ExpenseType) => new Date(a.date).getTime() - new Date(b.date).getTime())
 	})
+
 	// 處理圓餅圖資料
 	categoryMap.forEach((category: Category) => {
 		// console.log('===', category)
 		chartData.labels.push(category.label)
 		chartData.datasets[0].data.push(category.total)
-		chartData.datasets[0].backgroundColor.push(getRandomColor()) // 給每個類別隨機顏色
+		chartData.datasets[0].backgroundColor.push(getRandomColor())
 	})
-	// console.log('chartData', chartData)
-	// return Array.from(categoryMap.values())
+
 	return {
 		tree: Array.from(categoryMap.values()),
 		chart: chartData,
@@ -176,9 +197,7 @@ const pieChartData = computed(() => {
 	return chart
 })
 
-const treeData = computed(() => {
-	// console.log(start_date.value)
-    // console.log('treeData start_date.value,=', start_date.value,)
+const treeData = computed(() => {   
 
 	return calculateTreeData(
 		props.expenseList || [],

@@ -1,36 +1,14 @@
 <script setup lang="ts">
 import * as XLSX from 'xlsx'
 import { defineProps ,ref,watch} from 'vue'
-// import type { ExpenseType } from '@/types/expenseType'
-// const props = defineProps({
-//   treeData: {
-//     type: Array,
-//     required: true
-//   }
-// })
+import  { ExpenseType } from '@/interfaces/ExpenseType'
+
 const props = defineProps<{
   treeData: any  // 定義傳入的 treeData 型別
 }>()
 // const latestTreeData = ref(props.treeData)  // 用來儲存最新的 treeData
-interface ExpenseType {
-	// 根據實際資料結構設置屬性
-	amount: string
-	category: number
-	date: string
-	description: string
-	id: number
-	key?: number | string
-	type: string
-	expanded?: boolean
-	label?: string
-}
-// interface ChartData {
-// 	labels: string[]
-// 	datasets: {
-// 		data: number[]
-// 		backgroundColor: string[]
-// 	}[]
-// }
+
+
 interface Category {
 	children: Array<ExpenseType>
 	id: string
@@ -43,28 +21,28 @@ interface Category {
 // const props = defineProps<{
 // 	treeData: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
 // }>()
-// console.log(props.treeData)
+console.table(props.treeData)
 const filterData = ()=>{
     const data:any[] = []
 
-  // 遍歷treeData，每個分類都有children
-  props.treeData.forEach((category:Category) => {
-//   latestTreeData.value.forEach(category => {
-    console.log('category',category)
-    if (category.children && category.children.length > 0) {
-      category.children.forEach(child => {
-        // 將每個child的資料與其所屬的category資料結合
-        data.push({
-          categoryName: category.label,  // 分類名稱
-          date: child.date,              // 日期
-          description: child.description, // 說明
-          amount: child.amount           // 金額
-        })
-      })
-    }
-  })
+    // 遍歷treeData，每個分類都有children
+    props.treeData.forEach((category:Category) => {
+    //   latestTreeData.value.forEach(category => {
+        console.log('category',category)
+        if (category.children && category.children.length > 0) {
+            category.children.forEach(child => {
+                // 將每個child的資料與其所屬的category資料結合
+                data.push({
+                    categoryName: category.label,  // 分類名稱
+                    date: child.date,              // 日期
+                    description: child.description, // 說明
+                    amount: child.amount           // 金額
+                })
+            })
+        }
+    })
 
-  return data
+    return data
 }
 
 // watch(() => props.treeData, (newData) => {
@@ -73,7 +51,6 @@ const filterData = ()=>{
 // })
 const exportToExcel = () => {
     const data = filterData()
-    return
 	const ws = XLSX.utils.json_to_sheet(data) // 將資料轉換為工作表
 	const wb = XLSX.utils.book_new() // 創建一個新的工作簿
 	XLSX.utils.book_append_sheet(wb, ws, '記帳資料') // 將工作表附加到工作簿
@@ -124,21 +101,6 @@ const exportToExcel = () => {
 			display: none;
 		}
 	}
-	/* &_container {
-		display: flex;
-		font-size: 14px;
-		& > input {
-			display: none;
-		}
-		& > label {
-			background-color: transparent;
-			border: none;
-			@include yellowBtn;
-			padding: 4px;
-			margin: 0 10px;
-			border-bottom: 3px solid transparent;
-			cursor: pointer;
-		}
-	} */
+	
 }
 </style>

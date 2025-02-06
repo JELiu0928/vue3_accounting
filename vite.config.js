@@ -7,9 +7,6 @@ import path from 'node:path';
 export default defineConfig({
     plugins: [vue(), vueJsx(), vueDevTools()],
     resolve: {
-        // alias: {
-        // 	'@': fileURLToPath(new URL('./src', import.meta.url)),
-        // },
         alias: {
             "@": path.join(__dirname, "./src")
         }

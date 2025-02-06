@@ -4,7 +4,7 @@ const props = defineProps();
 // const props = defineProps<{
 // 	treeData: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
 // }>()
-// console.log(props.treeData)
+console.table(props.treeData);
 const filterData = () => {
     const data = [];
     // 遍歷treeData，每個分類都有children
@@ -31,7 +31,6 @@ const filterData = () => {
 // })
 const exportToExcel = () => {
     const data = filterData();
-    return;
     const ws = XLSX.utils.json_to_sheet(data); // 將資料轉換為工作表
     const wb = XLSX.utils.book_new(); // 創建一個新的工作簿
     XLSX.utils.book_append_sheet(wb, ws, '記帳資料'); // 將工作表附加到工作簿

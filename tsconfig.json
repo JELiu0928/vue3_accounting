@@ -13,6 +13,7 @@
 		"module": "esnext",
 		"moduleResolution": "node",
 		"jsx": "preserve",
+        "importHelpers": true,
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -26,6 +27,11 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+	"include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "src/**/*.tsx",
+        "src/**/*.vue"
+    ],
 	"exclude": ["node_modules"]
 }
