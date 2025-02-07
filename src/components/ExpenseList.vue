@@ -10,6 +10,7 @@ import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import PieChart from './PieChart.vue'
+import LineChart from './LineChart.vue'
 import Excel from './Excel.vue'
 
 // import type { ExpenseType } from '../types/expense'
@@ -19,14 +20,7 @@ const props = defineProps<{
 	expenseList: ExpenseType[], // 指定 expenseList 的型別為 ExpenseType[]
 	allCategoryArr: Category_id[] // 指定 expenseList 的型別為 ExpenseType[]
 }>()
-// console.log('List____props',props)
-// console.log('List____props.allCategoryArr',props.allCategoryArr)
-// //#region interface ___ start
-// nextTick(()=>{
-//     console.log('nextTick____props.allCategoryArr',props.allCategoryArr)
-//     console.log('nextTick____props.allCategoryArr.value',props.allCategoryArr.value)
 
-// })
 watch(props.allCategoryArr, (newVal) => {
   console.log("allCategoryArr 變動了:", newVal);
 }, { deep: true });
@@ -54,21 +48,32 @@ interface Category_id {
 	id: number
 	cate: string
 }
-interface ChartData {
+interface PieChartData {
 	labels: string[]
 	datasets: {
 		data: number[]
 		backgroundColor: string[]
 	}[]
 }
+interface LineChartData {
+	labels: string[]
+	datasets: {
+		label: string
+        data: number[]
+		borderColor: string
+		backgroundColor: string
+		fill: boolean
+	}[]
+}
 interface TreeDataResult {
-	chart: any
+	piechart: any
 	tree: any
 }
 
 //#endregion
 
 const showPieChart = ref(false)
+const showLineChart = ref(false)
 const locale = zhCn
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense'])
@@ -92,24 +97,106 @@ const dateRange = ref<[Date, Date] | undefined>(
 
 // console.log('date', dateRange.value)
 const selectedShowType = ref('show_expense')
-let categories: Category_id[] = [
-	{ id: 1, cate: '飲食' },
-	{ id: 2, cate: '日常' },
-	{ id: 3, cate: '交通' },
-	{ id: 4, cate: '娛樂' },
-	{ id: 5, cate: '其它' },
-	// { id: 6, cate: '股票' },
-	// { id: 7, cate: '其它2' },
-	// { id: 8, cate: '其它3' },
-	{ id: 999, cate: '未分類' },
-]
+// let categories: Category_id[] = [
+// 	{ id: 1, cate: '飲食' },
+// 	{ id: 2, cate: '日常' },
+// 	{ id: 3, cate: '交通' },
+// 	{ id: 4, cate: '娛樂' },
+// 	{ id: 5, cate: '其它' },
+// 	// { id: 6, cate: '股票' },
+// 	// { id: 7, cate: '其它2' },
+// 	// { id: 8, cate: '其它3' },
+// 	{ id: 999, cate: '未分類' },
+// ]
 
-const costomCate: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
-categories = [...categories, ...costomCate]
+// const costomCate: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
+// categories = [...categories, ...costomCate]
 // 
-console.log('categories', categories)
+// console.log('categories', categories)
 
 
+const selectedYear = ref(new Date().getFullYear());
+// const getLastFiveYear = ()=>{
+const currentYear = new Date().getFullYear();
+const years:number[] = [];
+
+for (let i = 0; i < 5; i++) {
+    years.push(currentYear - i);
+}
+// }
+const calculateLineChart = function(list: ExpenseType[], year: number){
+    // console.log('執行111')
+
+    const linechart: LineChartData = { 
+        labels: [], 
+        datasets: [
+            { label: '收入', data: [], borderColor: 'green', backgroundColor: 'rgba(0, 255, 0, 0.2)', fill: false },
+            { label: '支出', data: [], borderColor: 'red', backgroundColor: 'rgba(255, 0, 0, 0.2)', fill: false }
+        ]
+    }
+    // console.log('Selected Year:', year);
+    const monthlyDataMap = new Map<string, { income: number, expense: number }>()
+    
+    // const date = new Date(expense.date)
+    for(let month = 1; month <= 12; month++){
+        const yearMonth = `${String(year)}-${month.toString().padStart(2, '0')}`
+        // console.log('==========',yearMonth)
+        monthlyDataMap.set(yearMonth, { income: 0, expense: 0 })
+
+    }
+    // console.log('111monthlyDatadMap',monthlyDataMap)
+
+    // if(!monthlyDataMap.has(yearMonth)){
+    //     monthlyDataMap.set(yearMonth, { income: 0, expense: 0 })
+    // }
+    // console.log('執行222')
+
+    //折線圖
+    list.forEach((expense: ExpenseType)=>{
+        // console.log('list_expense',expense)
+        const expensYear = new Date(expense.date).getFullYear()
+        // console.log(expensYear)
+        if(expensYear == year){
+            const yearMonth = expense.date.slice(0, 7);
+            if(expense.type === 'expense'){
+                // console.log('支出c')
+                monthlyDataMap.get(yearMonth)!.expense += parseInt(expense.amount)
+            }else{
+                monthlyDataMap.get(yearMonth)!.income += parseInt(expense.amount)
+            }
+        }
+
+    }) 
+    const labels = Array.from(monthlyDataMap.keys()) //把key轉成陣列
+    const incomeData = labels.map((month)=>monthlyDataMap.get(month)!.income)
+    const expenseData = labels.map((month)=>monthlyDataMap.get(month)!.expense)
+    // console.log('labesls ',labels,'incomeData',incomeData,'expenseData',expenseData)
+    // return monthlyDataMap
+    // console.log('222filteredList monthlyDataMap',monthlyDataMap)
+    return{
+        labels ,
+        incomeData: { label: '收入', data: incomeData, borderColor: 'green', backgroundColor: 'rgba(0, 255, 0, 0.2)', fill: false },
+        expenseData:{ label: '支出', data: expenseData, borderColor: 'red', backgroundColor: 'rgba(255, 0, 0, 0.2)', fill: false }
+        ,
+        // datasets: [
+        //     { label: '收入', data: incomeData, borderColor: 'green', backgroundColor: 'rgba(0, 255, 0, 0.2)', fill: false },
+        //     { label: '支出', data: expenseData, borderColor: 'red', backgroundColor: 'rgba(255, 0, 0, 0.2)', fill: false }
+        // ]
+    }
+
+}
+// calculateLineChart(props.expenseList || [],'2025')
+console.log(selectedYear)
+watch(selectedYear,(val)=>{
+    console.log(val)
+})
+const lineChartData = computed(() => {
+    console.log('lineChartData computed')
+	return calculateLineChart(
+	    props.expenseList || [],
+		selectedYear.value
+	)
+}) 
 
 const calculateTreeData = function (
 	list: ExpenseType[],
@@ -120,7 +207,8 @@ const calculateTreeData = function (
 	// 存放每個分類的帳目
 	const categoryMap = new Map()
 	// 圓餅圖的結構
-	const chartData: ChartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+	const piechart: PieChartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
+   
 	// console.log('lsit', list)
 	const filteredList = list.filter((expense: ExpenseType) => {
 		// console.log('expense', expense)
@@ -132,42 +220,38 @@ const calculateTreeData = function (
 		return isInDateRange && isCorrectType
 	})
 
-	// nextTick(()=>{
-        filteredList.forEach((expense: ExpenseType) => {
-            console.log('props.allCategoryArr.value=========',props.allCategoryArr)
-            if (!categoryMap.has(expense.category)) {
-                const category = props.allCategoryArr.find((c: Category_id) =>  c.id === expense.category)
-                // const category = categories.find((c: Category_id) => c.id === expense.category)
-                // console.log('==22=', category)
+    filteredList.forEach((expense: ExpenseType) => {
+        // console.log('props.allCategoryArr.value=========',props.allCategoryArr)
+        if (!categoryMap.has(expense.category)) {
+            const category = props.allCategoryArr.find((c: Category_id) =>  c.id === expense.category)
 
-                // tree結構
-                categoryMap.set(expense.category, {
-                    key: `category-${expense.category}`, // 節點的唯一識別碼
-                    label: category ? category.cate : '未分類', // 顯示的名稱
-                    type: 'category', // 節點類型
-                    total: 0, // 該分類的總金額
-                    expanded: true, // 是否展開該分類節點
-                    children: [], // 該分類底下的支出項目
-                })
-            }
-            const categoryNode = categoryMap.get(expense.category)
-            //子節點
-            categoryNode.children.push({
-                key: expense.id,
-                id: expense.id,
-                type: expense.type,
-                date: expense.date,
-                description: expense.description,
-                amount: String(expense.amount),
-                category: expense.category,
+            // tree結構
+            categoryMap.set(expense.category, {
+                key: `category-${expense.category}`, // 節點的唯一識別碼
+                label: category ? category.cate : '未分類', // 顯示的名稱
+                type: 'category', // 節點類型
+                total: 0, // 該分類的總金額
+                expanded: true, // 是否展開該分類節點
+                children: [], // 該分類底下的支出項目
             })
-            categoryNode.total += parseInt(expense.amount)
+        }
+        const categoryNode = categoryMap.get(expense.category)
+        // console.log('categoryNode',categoryNode)
+        //子節點
+        // console.log( expense.description)
+        categoryNode.children.push({
+            key: expense.id,
+            id: expense.id,
+            type: expense.type,
+            date: expense.date,
+            description: expense.description ,
+            amount: String(expense.amount),
+            category: expense.category,
         })
-    // })
+        categoryNode.total += parseInt(expense.amount)
+    })
         
-    
-    
-    console.log('categoryMap',categoryMap)
+    // console.log('categoryMap',categoryMap)
     //日期排序：舊~新
     categoryMap.forEach((category: Category) => {
 		//轉時間戳之後大小排序
@@ -177,28 +261,28 @@ const calculateTreeData = function (
 	// 處理圓餅圖資料
 	categoryMap.forEach((category: Category) => {
 		// console.log('===', category)
-		chartData.labels.push(category.label)
-		chartData.datasets[0].data.push(category.total)
-		chartData.datasets[0].backgroundColor.push(getRandomColor())
+		piechart.labels.push(category.label)
+		piechart.datasets[0].data.push(category.total)
+		piechart.datasets[0].backgroundColor.push(getRandomColor())
 	})
 
+    console.log('---++--    ',Array.from(categoryMap.values()))
 	return {
 		tree: Array.from(categoryMap.values()),
-		chart: chartData,
+		piechart: piechart,
 	}
 }
 const pieChartData = computed(() => {
-	const { chart } = calculateTreeData(
+	const { piechart } = calculateTreeData(
 		props.expenseList || [],
 		start_date.value,
 		end_date.value,
 		selectedShowType.value,
 	)
-	return chart
+	return piechart
 })
 
 const treeData = computed(() => {   
-
 	return calculateTreeData(
 		props.expenseList || [],
 		start_date.value,
@@ -206,12 +290,8 @@ const treeData = computed(() => {
 		selectedShowType.value,
 	).tree
 })
-// console.log('treeData=', treeData)
-// console.log('treeData value=', treeData.value)
-watch([props.expenseList, start_date, end_date], () => {
-  console.log('treeData 已更新', treeData)
-  console.log('treeData value已更新', treeData.value)
-})
+
+// 日期UI
 const searchByDateRange = function (type: string) {
 	if (type == 'custom') {
 		if (!dateRange.value || dateRange.value.length !== 2) return
@@ -288,6 +368,16 @@ nextTick(() => {
 			<button @click="showPieChart = false">關閉</button>
 		</div>
 	</div>
+	<div v-if="showLineChart" class="modal">
+		<div class="modal_content">
+                <span>請選擇年份：</span>
+                <select v-model="selectedYear">
+                    <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+                </select>
+                <LineChart v-if="lineChartData.labels.length > 0" :lineChartData="lineChartData " />
+			<button @click="showLineChart = false">關閉</button>
+		</div>
+	</div>
 	<div class="date_range_area">
 		<el-config-provider :locale="locale">
 			<el-date-picker
@@ -325,6 +415,7 @@ nextTick(() => {
 	<div class="search_area">
 		<Excel v-if="isTreeDataReady" :treeData="treeData" />
 		<button @click="showPieChart = !showPieChart">查看圓餅圖</button>
+		<button @click="showLineChart = !showLineChart">收支趨勢圖</button>
 	</div>
 	<div class="card">
 		<Tree
@@ -371,17 +462,22 @@ nextTick(() => {
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, 0.5);
-	display: flex;
+	/* display: flex;
 	justify-content: center;
-	align-items: center;
+	align-items: center; */
+    @include flexCenter;
 	&_content {
 		background-color: var(--color-yellow);
 		padding: 20px;
 		border-radius: 5px;
+        color: var(--color-secondary);
 		& > button {
 			@include mainColorBtn;
 			padding: 5px 10px;
+            margin-top: 10px;
 			background-color: var(--color-secondary);
+            display: block;
+            justify-self: center;
 		}
 	}
 }

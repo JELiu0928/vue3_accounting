@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import Star from '@/components/StarCanvas.vue'
 </script>
 
 <template>
+    <Star/>
 	<header>
 		<div class="wrapper">
 			<nav>

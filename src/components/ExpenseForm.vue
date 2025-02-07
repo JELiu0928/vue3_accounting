@@ -119,8 +119,9 @@ const saveOrUpdate = () => {
 	}
 
 	if (countValue.value) {
-		const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
-		// console.log('===', selectedType.value)
+		// const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
+		const selectedCategory = allCategoryArr.value.find((c: Category_id) => c.id === selectedCate.value)
+		console.log('==selectedCategory=', selectedCategory )
 		const defaultDescription = selectedCategory ? selectedCategory.cate : ''
 		countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
 		const expense = {
@@ -225,13 +226,13 @@ const getCategory = (cate: { id: number; cate: string }) => {
 watch(
 	customCategoriesArr,
 	(newVal) => {
-        console.log('設置customCate')
+        // console.log('設置customCate')
 		localStorage.setItem('customCate', JSON.stringify(newVal))
 		// console.log('vvvv', customCategoriesArr.value)
         const costomCateArr: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
-        console.log('costomCateArr',costomCateArr)
+        // console.log('costomCateArr',costomCateArr)
         allCategoryArr.value = [...categories,...costomCateArr]
-        console.log('allCategoryArr',allCategoryArr.value)
+        // console.log('allCategoryArr',allCategoryArr.value)
 	},
 	{ deep: true },
 )

@@ -4,7 +4,7 @@ const props = defineProps();
 // const props = defineProps<{
 // 	treeData: ExpenseType[] // 指定 expenseList 的型別為 ExpenseType[]
 // }>()
-console.table(props.treeData);
+// console.table(props.treeData)
 const filterData = () => {
     const data = [];
     // 遍歷treeData，每個分類都有children
