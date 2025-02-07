@@ -4,7 +4,7 @@ import Star from '@/components/StarCanvas.vue'
 </script>
 
 <template>
-    <Star/>
+    <!-- <Star/> -->
 	<header>
 		<div class="wrapper">
 			<nav>
