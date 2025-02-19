@@ -38,6 +38,8 @@ const loadStorageExpense = () => {
     }
 };
 onMounted(loadStorageExpense);
+allCategoryArr.value = [...categories];
+console.log('allCategoryArr.value==', allCategoryArr.value);
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value) => {
     const operators = ['+', '-', '×', '÷'];
@@ -193,8 +195,10 @@ watch(customCategoriesArr, (newVal) => {
     // console.log('vvvv', customCategoriesArr.value)
     const costomCateArr = JSON.parse(localStorage.getItem('customCate') || '[]');
     // console.log('costomCateArr',costomCateArr)
+    console.log('categories===', categories);
     allCategoryArr.value = [...categories, ...costomCateArr];
     // console.log('allCategoryArr',allCategoryArr.value)
+    console.log('allCategoryArr====', allCategoryArr.value);
 }, { deep: true });
 // const isCostomCate = ref<boolean>(false)
 const editExpense = (expense) => {

@@ -16,6 +16,9 @@ const showLineChart = ref(false);
 const locale = zhCn;
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense']);
+const balance = ref(0);
+const totalExpense = ref(0);
+const totalIncome = ref(0);
 // 獲取當月的第一天和最後一天
 const getDateRange = () => {
     const today = new Date();
@@ -47,6 +50,7 @@ const selectedShowType = ref('show_expense');
 // categories = [...categories, ...costomCate]
 // 
 // console.log('categories', categories)
+// const calcArea = ref<HTMLDivElement>(null)
 const selectedYear = ref(new Date().getFullYear());
 // const getLastFiveYear = ()=>{
 const currentYear = new Date().getFullYear();
@@ -110,7 +114,7 @@ const calculateLineChart = function (list, year) {
     };
 };
 // calculateLineChart(props.expenseList || [],'2025')
-console.log(selectedYear);
+// console.log(selectedYear)
 watch(selectedYear, (val) => {
     console.log(val);
 });
@@ -123,7 +127,24 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
     const categoryMap = new Map();
     // 圓餅圖的結構
     const piechart = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
-    // console.log('lsit', list)
+    const totals = list.reduce((acc, cur) => {
+        const curDate = new Date(cur.date);
+        const isInDateRange = startDate <= curDate && curDate <= endDate;
+        // console.log('isInDateRange',isInDateRange)
+        if (isInDateRange) {
+            if (cur.type === 'income') {
+                acc.totalIncome += parseInt(cur.amount, 10);
+            }
+            else if (cur.type === 'expense') {
+                acc.totalExpense += parseInt(cur.amount, 10);
+            }
+        }
+        return acc;
+    }, { totalIncome: 0, totalExpense: 0 });
+    // console.log('totalAmount',balance)
+    totalIncome.value = totals.totalIncome;
+    totalExpense.value = totals.totalExpense;
+    balance.value = totals.totalIncome - totals.totalExpense;
     const filteredList = list.filter((expense) => {
         // console.log('expense', expense)
         const expenseDate = new Date(expense.date);
@@ -166,6 +187,13 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         //轉時間戳之後大小排序
         category.children.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     });
+    // console.log('categoryMap',categoryMap)
+    // categoryMap.reduce((cate,_)=>{
+    //     console.log('categoryMap   cate===',cate)
+    //     // cate.reduce((acc)=>{
+    //     //     console.log(acc)
+    //     // })
+    // })
     // 處理圓餅圖資料
     categoryMap.forEach((category) => {
         // console.log('===', category)
@@ -173,7 +201,6 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         piechart.datasets[0].data.push(category.total);
         piechart.datasets[0].backgroundColor.push(getRandomColor());
     });
-    console.log('---++--    ', Array.from(categoryMap.values()));
     return {
         tree: Array.from(categoryMap.values()),
         piechart: piechart,
@@ -252,6 +279,9 @@ nextTick(() => {
     if (treeData.value.length > 0) {
         isTreeDataReady.value = true;
     }
+});
+const showCalcArea = computed(() => {
+    return balance.value !== 0 || totalIncome.value !== 0;
 }); /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
     const __VLS_ctx = {};
@@ -420,6 +450,7 @@ function __VLS_template() {
     });
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
         ...{ class: ("card") },
+        'data-amount': ("0"),
     });
     const __VLS_27 = {}.Tree;
     /** @type { [typeof __VLS_components.Tree, typeof __VLS_components.Tree, ] } */ ;
@@ -497,7 +528,26 @@ function __VLS_template() {
         }
     }
     var __VLS_32;
-    ['modal', 'modal_content', 'modal', 'modal_content', 'date_range_area', 'type_area', 'search_area', 'card', 'expense_tree', 'expense_cate', 'expense_total', 'expense_item', 'btn_edit', 'btn', 'fa-solid', 'fa-pen', 'btn_remove', 'btn', 'fa-solid', 'fa-trash-can',];
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: ("calc_area") },
+    });
+    __VLS_asFunctionalDirective(__VLS_directives.vShow)(null, { ...__VLS_directiveBindingRestFields, value: (__VLS_ctx.showCalcArea) }, null, null);
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: ("calc_totalExpense") },
+    });
+    __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
+    (__VLS_ctx.totalExpense);
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: ("calc_totalIncome") },
+    });
+    __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
+    (__VLS_ctx.totalIncome);
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: ("calc_balance") },
+    });
+    __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
+    (__VLS_ctx.balance);
+    ['modal', 'modal_content', 'modal', 'modal_content', 'date_range_area', 'type_area', 'search_area', 'card', 'expense_tree', 'expense_cate', 'expense_total', 'expense_item', 'btn_edit', 'btn', 'fa-solid', 'fa-pen', 'btn_remove', 'btn', 'fa-solid', 'fa-trash-can', 'calc_area', 'calc_totalExpense', 'calc_totalIncome', 'calc_balance',];
     var __VLS_slots;
     var $slots;
     let __VLS_inheritedAttrs;
@@ -525,6 +575,9 @@ const __VLS_self = (await import('vue')).defineComponent({
             showPieChart: showPieChart,
             showLineChart: showLineChart,
             locale: locale,
+            balance: balance,
+            totalExpense: totalExpense,
+            totalIncome: totalIncome,
             dateRange: dateRange,
             selectedShowType: selectedShowType,
             selectedYear: selectedYear,
@@ -538,6 +591,7 @@ const __VLS_self = (await import('vue')).defineComponent({
             expandedKeys: expandedKeys,
             toggleCategory: toggleCategory,
             isTreeDataReady: isTreeDataReady,
+            showCalcArea: showCalcArea,
         };
     },
     emits: {},

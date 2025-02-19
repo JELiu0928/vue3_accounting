@@ -4,7 +4,7 @@
 // }>()
 </script> -->
 <script setup lang="ts">
-import { ref, defineProps, computed, defineEmits,nextTick ,watch} from 'vue'
+import { ref, defineProps, computed, defineEmits,nextTick ,watch,onMounted} from 'vue'
 import Tree from 'primevue/tree'
 import { ElDatePicker, ElConfigProvider } from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -77,7 +77,9 @@ const showLineChart = ref(false)
 const locale = zhCn
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense'])
-
+const balance = ref<number>(0)
+const totalExpense = ref<number>(0)
+const totalIncome = ref<number>(0)
 // 獲取當月的第一天和最後一天
 const getDateRange = () => {
 	const today = new Date()
@@ -113,6 +115,7 @@ const selectedShowType = ref('show_expense')
 // categories = [...categories, ...costomCate]
 // 
 // console.log('categories', categories)
+// const calcArea = ref<HTMLDivElement>(null)
 
 
 const selectedYear = ref(new Date().getFullYear());
@@ -186,7 +189,7 @@ const calculateLineChart = function(list: ExpenseType[], year: number){
 
 }
 // calculateLineChart(props.expenseList || [],'2025')
-console.log(selectedYear)
+// console.log(selectedYear)
 watch(selectedYear,(val)=>{
     console.log(val)
 })
@@ -208,15 +211,30 @@ const calculateTreeData = function (
 	const categoryMap = new Map()
 	// 圓餅圖的結構
 	const piechart: PieChartData = { labels: [], datasets: [{ data: [], backgroundColor: [] }] }
-   
-	// console.log('lsit', list)
+    
+    const totals = list.reduce((acc,cur)=>{
+        const curDate = new Date(cur.date)
+		const isInDateRange = startDate <= curDate && curDate <= endDate
+        // console.log('isInDateRange',isInDateRange)
+        if (isInDateRange) {
+            if (cur.type === 'income') {
+                acc.totalIncome += parseInt(cur.amount, 10);
+            } else if (cur.type === 'expense') {
+                acc.totalExpense += parseInt(cur.amount, 10);
+            }
+        }
+        return acc
+    },{totalIncome:0,totalExpense:0})
+    // console.log('totalAmount',balance)
+    totalIncome.value = totals.totalIncome
+    totalExpense.value = totals.totalExpense
+    balance.value = totals.totalIncome - totals.totalExpense
 	const filteredList = list.filter((expense: ExpenseType) => {
 		// console.log('expense', expense)
 		const expenseDate = new Date(expense.date)
 		const isInDateRange = startDate <= expenseDate && expenseDate <= endDate
 		const isCorrectType =
 			showType === 'show_expense' ? expense.type === 'expense' : expense.type === 'income'
-
 		return isInDateRange && isCorrectType
 	})
 
@@ -257,7 +275,13 @@ const calculateTreeData = function (
 		//轉時間戳之後大小排序
         category.children.sort((a:ExpenseType, b:ExpenseType) => new Date(a.date).getTime() - new Date(b.date).getTime())
 	})
-
+    // console.log('categoryMap',categoryMap)
+    // categoryMap.reduce((cate,_)=>{
+    //     console.log('categoryMap   cate===',cate)
+    //     // cate.reduce((acc)=>{
+    //     //     console.log(acc)
+    //     // })
+    // })
 	// 處理圓餅圖資料
 	categoryMap.forEach((category: Category) => {
 		// console.log('===', category)
@@ -266,7 +290,6 @@ const calculateTreeData = function (
 		piechart.datasets[0].backgroundColor.push(getRandomColor())
 	})
 
-    console.log('---++--    ',Array.from(categoryMap.values()))
 	return {
 		tree: Array.from(categoryMap.values()),
 		piechart: piechart,
@@ -359,7 +382,12 @@ nextTick(() => {
   if (treeData.value.length > 0) {
     isTreeDataReady.value = true
   }
+  
 })
+const showCalcArea = computed(() => {
+    return balance.value !== 0 || totalIncome.value !== 0
+})
+
 </script>
 <template>
 	<div v-if="showPieChart" class="modal">
@@ -417,7 +445,7 @@ nextTick(() => {
 		<button @click="showPieChart = !showPieChart">查看圓餅圖</button>
 		<button @click="showLineChart = !showLineChart">收支趨勢圖</button>
 	</div>
-	<div class="card">
+	<div class="card" data-amount="0">
 		<Tree
 			:value="treeData"
 			class="expense_tree"
@@ -450,6 +478,11 @@ nextTick(() => {
 				</template>
 			</template>
 		</Tree>
+        <div class="calc_area" v-show="showCalcArea">
+            <div class="calc_totalExpense">總支出：<span>{{totalExpense}}</span>元</div>
+            <div class="calc_totalIncome">總收入：<span>{{totalIncome}}</span>元</div>
+            <div class="calc_balance">收支結餘：<span>{{balance}}</span>元</div>
+        </div>
 	</div>
 </template>
 
@@ -505,13 +538,26 @@ nextTick(() => {
 	background-color: transparent;
 	overflow-y: scroll;
 	height: 75vh;
+    position: relative;
 	&::-webkit-scrollbar {
 		width: 5px;
 		/* background: var(--color-secondary); */
 		background: transparent;
 		/* background: #000; */
 	}
-
+    .calc{
+        &_area{
+            display: flex;
+            justify-content: right;
+            gap: 20px;
+            position: sticky;
+            bottom: 0;
+            background-color: var(--color-yellow);
+            width: 100%;
+            padding: 10px 15px;
+            color: var(--color-secondary);
+        }
+    }
 	&::-webkit-scrollbar-thumb {
 		background: #22234c;
 	}
@@ -522,6 +568,8 @@ nextTick(() => {
 		background-color: var(--color-secondary) !important;
 		/* background-color: var(--color-secondary); */
 	}
+  
+     
 }
 .date_range_area {
 	display: flex;

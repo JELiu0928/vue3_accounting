@@ -55,9 +55,11 @@ const loadStorageExpense = () => {
 	if (storageCustomCate) {
 		customCategoriesArr.value = JSON.parse(storageCustomCate)
 	}
+  
 }
 onMounted(loadStorageExpense)
-
+allCategoryArr.value = [...categories]
+console.log('allCategoryArr.value==',allCategoryArr.value)
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value: string) => {
 	const operators = ['+', '-', '×', '÷']
@@ -117,7 +119,6 @@ const saveOrUpdate = () => {
 		alert('請選擇分類')
 		return
 	}
-
 	if (countValue.value) {
 		// const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
 		const selectedCategory = allCategoryArr.value.find((c: Category_id) => c.id === selectedCate.value)
@@ -231,8 +232,11 @@ watch(
 		// console.log('vvvv', customCategoriesArr.value)
         const costomCateArr: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
         // console.log('costomCateArr',costomCateArr)
+        console.log('categories===',categories)
         allCategoryArr.value = [...categories,...costomCateArr]
         // console.log('allCategoryArr',allCategoryArr.value)
+        console.log('allCategoryArr====',allCategoryArr.value)
+
 	},
 	{ deep: true },
 )
