@@ -8,7 +8,6 @@ let chartInstance: Chart | null = null;
 const props = defineProps<{
     lineChartData: any  // 定義傳入的 treeData 型別
 }>()
-console.log(props)
 // Vue3 + Vite 環境下使用 Chart.js，需要手動註冊模組
 Chart.register(LineController, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 

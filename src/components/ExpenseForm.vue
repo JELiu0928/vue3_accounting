@@ -1,26 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, watch } from 'vue'
 import ExpenseList from './ExpenseList.vue'
-import { ElDatePicker, ElConfigProvider } from 'element-plus'
-import 'element-plus/dist/index.css'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
+// import { ElDatePicker, ElConfigProvider } from 'element-plus'
+// import 'element-plus/dist/index.css'
+import zhTw from 'element-plus/es/locale/lang/zh-tw'
 import  { ExpenseType } from '@/interfaces/ExpenseType'
 // 定義 input 欄位的值
 const countValue = ref<string>('')
 const descValue = ref<string>('')
-// interface ExpenseType {
-// 	// 根據實際資料結構設置屬性
-// 	id: number
-// 	key?: number | string
-// 	amount: string
-// 	category: number
-// 	date: string
-// 	description: string
-// 	type: string
-// 	expanded?: boolean
-// 	label?: string
-// }
-// console.log('type===',ExpenseType)
+
 interface Category_id {
 	id: number
 	cate: string
@@ -39,7 +27,7 @@ const customCate = ref<string>('')
 const customCategoriesArr = ref<{ id: number; cate: string }[]>([])
 const allCategoryArr = ref<{ id: number; cate: string }[]>([])
 const date = ref(new Date())
-const locale = zhCn
+const locale = zhTw
 const selectedCate = ref<number | null>(null)
 const selectedAddCate = ref<number | null>(null)
 const selectedType = ref<string>('expense')
@@ -59,7 +47,7 @@ const loadStorageExpense = () => {
 }
 onMounted(loadStorageExpense)
 allCategoryArr.value = [...categories]
-console.log('allCategoryArr.value==',allCategoryArr.value)
+// console.log('allCategoryArr.value==',allCategoryArr.value)
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value: string) => {
 	const operators = ['+', '-', '×', '÷']
@@ -120,9 +108,7 @@ const saveOrUpdate = () => {
 		return
 	}
 	if (countValue.value) {
-		// const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
 		const selectedCategory = allCategoryArr.value.find((c: Category_id) => c.id === selectedCate.value)
-		console.log('==selectedCategory=', selectedCategory )
 		const defaultDescription = selectedCategory ? selectedCategory.cate : ''
 		countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')))
 		const expense = {
@@ -136,18 +122,13 @@ const saveOrUpdate = () => {
 
 		// 編輯模式下更新資料
 		if (isEditMode.value) {
-			// console.log('編輯', myExpenseList.value)
 			const index = myExpenseList.value.findIndex((item) => {
-				console.log('item', item)
 				return item.id === (currentEditItem.value ? currentEditItem.value.id : null)
 			})
-			console.log('index', index)
 			if (index !== -1) {
 				myExpenseList.value[index] = expense
 			}
 		} else {
-			// console.log('新增')
-
 			// 新增項目
 			myExpenseList.value.push(expense)
 		}
@@ -162,15 +143,10 @@ const saveOrUpdate = () => {
 		alert('請輸入金額')
 		return
 	}
-
-	// console.log(myExpenseList)
-	// console.log(localStorage.getItem('storageExpense'))
 }
 
 const showAddCategoryModal = ref(false)
 const addCategory = (cate: string) => {
-	console.log('add', selectedAddCate.value)
-
 	const isSameCate = [...categories, ...customCategoriesArr.value].some(
 		(item) => item.cate === cate,
 	)
@@ -196,17 +172,11 @@ const addCategory = (cate: string) => {
 
 }
 const delCategory = (cateID: number) => {
-	// console.log('刪除', cateID)
-	// console.log('刪除storageExpense', myExpenseList.value)
 	const confirmCateRemove = confirm('確定刪除此類別嗎?')
 	if (confirmCateRemove) {
-		// console.log('front', customCategoriesArr.value)
 		customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID)
-		// console.log('back', customCategoriesArr.value)
 		localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value))
-		// console.log('if刪除', cateID)
 		const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID)
-		// console.log(delItemIndex)
 
 		if (delItemIndex !== -1) {
 			myExpenseList.value[delItemIndex].category = 999
@@ -214,7 +184,6 @@ const delCategory = (cateID: number) => {
 		}
 		customCate.value = ''
 	}
-	// console.log('刪除2', myExpenseList.value)
 }
 const closeAddCateModal = (()=>{
     showAddCategoryModal.value = !showAddCategoryModal.value
@@ -227,25 +196,16 @@ const getCategory = (cate: { id: number; cate: string }) => {
 watch(
 	customCategoriesArr,
 	(newVal) => {
-        // console.log('設置customCate')
 		localStorage.setItem('customCate', JSON.stringify(newVal))
-		// console.log('vvvv', customCategoriesArr.value)
         const costomCateArr: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
-        // console.log('costomCateArr',costomCateArr)
-        console.log('categories===',categories)
         allCategoryArr.value = [...categories,...costomCateArr]
-        // console.log('allCategoryArr',allCategoryArr.value)
-        console.log('allCategoryArr====',allCategoryArr.value)
 
 	},
 	{ deep: true },
 )
 
-// const isCostomCate = ref<boolean>(false)
 
 const editExpense = (expense: ExpenseType) => {
-	console.log('exxxxxedit', expense)
-console.log('selectedType.value',selectedType.value)
 	isEditMode.value = true
 	currentEditItem.value = expense
 	date.value = new Date(expense.date)
@@ -259,7 +219,6 @@ const removeExpense = (expense: ExpenseType) => {
 	if (confirmRemove) {
 		myExpenseList.value = myExpenseList.value.filter((item) => item.id !== expense.id)
 		localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value))
-		// console.log('remove', expense)
 	}
 }
 </script>
@@ -421,11 +380,8 @@ const removeExpense = (expense: ExpenseType) => {
 			width: 100%;
 		}
 		&::-webkit-scrollbar {
-			/* margin-left: 20px; */
 			width: 5px;
-			/* background: var(--color-secondary); */
 			background: transparent;
-			/* background: #000; */
 		}
 
 		&::-webkit-scrollbar-thumb {
@@ -437,7 +393,6 @@ const removeExpense = (expense: ExpenseType) => {
 			color: var(--color-yellow);
 			cursor: pointer;
 			font-weight: 100;
-			/* font-size: 15px; */
 			letter-spacing: 1px;
 		}
 		.el-input__wrapper {
@@ -524,18 +479,15 @@ const removeExpense = (expense: ExpenseType) => {
 		}
 		& > input {
 			margin-bottom: 15px;
-			/* width: 80%; */
 			height: 40px;
 			padding: 10px;
 			outline: none;
 			font-weight: 100;
 			@include inputAndBtnType;
 			background-color: var(--color-secondary);
-			/* border: rgb(183, 154, 25) 1px solid; */
 			width: 100%;
 		}
 		& > div > button {
-			/* display: block; */
 			@include mainColorBtn;
 			padding: 5px 10px;
 			border: none;

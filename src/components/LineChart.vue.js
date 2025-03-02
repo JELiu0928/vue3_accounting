@@ -2,7 +2,6 @@ import { ref, onMounted, watch } from 'vue';
 import { Chart, LineController, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 let chartInstance = null;
 const props = defineProps();
-console.log(props);
 // Vue3 + Vite 環境下使用 Chart.js，需要手動註冊模組
 Chart.register(LineController, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 const chartCanvas = ref(null);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import Star from '@/components/StarCanvas.vue'
+// import Star from '@/components/StarCanvas.vue'
 </script>
 
 <template>

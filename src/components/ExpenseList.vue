@@ -1,29 +1,15 @@
-<!-- <script setup lang="ts">
-// defineProps<{
-// 	msg: string
-// }>()
-</script> -->
 <script setup lang="ts">
-import { ref, defineProps, computed, defineEmits,nextTick ,watch,onMounted} from 'vue'
+import { ref, defineProps, computed, defineEmits,nextTick} from 'vue'
 import Tree from 'primevue/tree'
-import { ElDatePicker, ElConfigProvider } from 'element-plus'
-import 'element-plus/dist/index.css'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import PieChart from './PieChart.vue'
 import LineChart from './LineChart.vue'
 import Excel from './Excel.vue'
 
-// import type { ExpenseType } from '../types/expense'
-// console.log('ExpenseType 已加載', ExpenseType)
-
 const props = defineProps<{
-	expenseList: ExpenseType[], // 指定 expenseList 的型別為 ExpenseType[]
-	allCategoryArr: Category_id[] // 指定 expenseList 的型別為 ExpenseType[]
+	expenseList: ExpenseType[], 
+	allCategoryArr: Category_id[] 
 }>()
 
-watch(props.allCategoryArr, (newVal) => {
-  console.log("allCategoryArr 變動了:", newVal);
-}, { deep: true });
 interface ExpenseType {
 	// 根據實際資料結構設置屬性
 	amount: string
@@ -70,11 +56,10 @@ interface TreeDataResult {
 	tree: any
 }
 
-//#endregion
 
 const showPieChart = ref(false)
 const showLineChart = ref(false)
-const locale = zhCn
+
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense'])
 const balance = ref<number>(0)
@@ -114,8 +99,6 @@ const selectedShowType = ref('show_expense')
 // const costomCate: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
 // categories = [...categories, ...costomCate]
 // 
-// console.log('categories', categories)
-// const calcArea = ref<HTMLDivElement>(null)
 
 
 const selectedYear = ref(new Date().getFullYear());
@@ -128,8 +111,6 @@ for (let i = 0; i < 5; i++) {
 }
 // }
 const calculateLineChart = function(list: ExpenseType[], year: number){
-    // console.log('執行111')
-
     const linechart: LineChartData = { 
         labels: [], 
         datasets: [
@@ -137,22 +118,12 @@ const calculateLineChart = function(list: ExpenseType[], year: number){
             { label: '支出', data: [], borderColor: 'red', backgroundColor: 'rgba(255, 0, 0, 0.2)', fill: false }
         ]
     }
-    // console.log('Selected Year:', year);
     const monthlyDataMap = new Map<string, { income: number, expense: number }>()
-    
-    // const date = new Date(expense.date)
+
     for(let month = 1; month <= 12; month++){
         const yearMonth = `${String(year)}-${month.toString().padStart(2, '0')}`
-        // console.log('==========',yearMonth)
         monthlyDataMap.set(yearMonth, { income: 0, expense: 0 })
-
     }
-    // console.log('111monthlyDatadMap',monthlyDataMap)
-
-    // if(!monthlyDataMap.has(yearMonth)){
-    //     monthlyDataMap.set(yearMonth, { income: 0, expense: 0 })
-    // }
-    // console.log('執行222')
 
     //折線圖
     list.forEach((expense: ExpenseType)=>{
@@ -173,9 +144,7 @@ const calculateLineChart = function(list: ExpenseType[], year: number){
     const labels = Array.from(monthlyDataMap.keys()) //把key轉成陣列
     const incomeData = labels.map((month)=>monthlyDataMap.get(month)!.income)
     const expenseData = labels.map((month)=>monthlyDataMap.get(month)!.expense)
-    // console.log('labesls ',labels,'incomeData',incomeData,'expenseData',expenseData)
-    // return monthlyDataMap
-    // console.log('222filteredList monthlyDataMap',monthlyDataMap)
+ 
     return{
         labels ,
         incomeData: { label: '收入', data: incomeData, borderColor: 'green', backgroundColor: 'rgba(0, 255, 0, 0.2)', fill: false },
@@ -188,13 +157,7 @@ const calculateLineChart = function(list: ExpenseType[], year: number){
     }
 
 }
-// calculateLineChart(props.expenseList || [],'2025')
-// console.log(selectedYear)
-watch(selectedYear,(val)=>{
-    console.log(val)
-})
 const lineChartData = computed(() => {
-    console.log('lineChartData computed')
 	return calculateLineChart(
 	    props.expenseList || [],
 		selectedYear.value
@@ -215,7 +178,6 @@ const calculateTreeData = function (
     const totals = list.reduce((acc,cur)=>{
         const curDate = new Date(cur.date)
 		const isInDateRange = startDate <= curDate && curDate <= endDate
-        // console.log('isInDateRange',isInDateRange)
         if (isInDateRange) {
             if (cur.type === 'income') {
                 acc.totalIncome += parseInt(cur.amount, 10);
@@ -225,12 +187,10 @@ const calculateTreeData = function (
         }
         return acc
     },{totalIncome:0,totalExpense:0})
-    // console.log('totalAmount',balance)
     totalIncome.value = totals.totalIncome
     totalExpense.value = totals.totalExpense
     balance.value = totals.totalIncome - totals.totalExpense
 	const filteredList = list.filter((expense: ExpenseType) => {
-		// console.log('expense', expense)
 		const expenseDate = new Date(expense.date)
 		const isInDateRange = startDate <= expenseDate && expenseDate <= endDate
 		const isCorrectType =
@@ -239,7 +199,6 @@ const calculateTreeData = function (
 	})
 
     filteredList.forEach((expense: ExpenseType) => {
-        // console.log('props.allCategoryArr.value=========',props.allCategoryArr)
         if (!categoryMap.has(expense.category)) {
             const category = props.allCategoryArr.find((c: Category_id) =>  c.id === expense.category)
 
@@ -254,9 +213,7 @@ const calculateTreeData = function (
             })
         }
         const categoryNode = categoryMap.get(expense.category)
-        // console.log('categoryNode',categoryNode)
         //子節點
-        // console.log( expense.description)
         categoryNode.children.push({
             key: expense.id,
             id: expense.id,
@@ -269,19 +226,11 @@ const calculateTreeData = function (
         categoryNode.total += parseInt(expense.amount)
     })
         
-    // console.log('categoryMap',categoryMap)
     //日期排序：舊~新
     categoryMap.forEach((category: Category) => {
 		//轉時間戳之後大小排序
         category.children.sort((a:ExpenseType, b:ExpenseType) => new Date(a.date).getTime() - new Date(b.date).getTime())
 	})
-    // console.log('categoryMap',categoryMap)
-    // categoryMap.reduce((cate,_)=>{
-    //     console.log('categoryMap   cate===',cate)
-    //     // cate.reduce((acc)=>{
-    //     //     console.log(acc)
-    //     // })
-    // })
 	// 處理圓餅圖資料
 	categoryMap.forEach((category: Category) => {
 		// console.log('===', category)
@@ -321,7 +270,6 @@ const searchByDateRange = function (type: string) {
 		const [newStartDate, newEndDate] = dateRange.value
 		start_date.value = new Date(newStartDate.setHours(0, 0, 0, 0))
 		end_date.value = new Date(newEndDate.setHours(23, 59, 59, 999))
-		// console.log(start_date.value, '-----', end_date.value)
 	} else if (type == 'today') {
 		const today = new Date()
 		start_date.value = new Date(today.setHours(0, 0, 0, 0))
@@ -337,7 +285,6 @@ const searchByDateRange = function (type: string) {
 }
 
 const edit = function (expense: ExpenseType) {
-	console.log('sss', expense)
 	emit('editExpense', expense)
 }
 const remove = function (expense: ExpenseType) {
@@ -356,22 +303,16 @@ const getRandomColor = () => {
 // const expandedKeys = ref({}) // 存放展開狀態
 const expandedKeys = ref<Record<string, boolean>>({}) // 初始化為空對象
 const toggleCategory = (node: ExpenseType) => {
-	// console.log('node', node)
 	if (node.type === 'category') {
 		const key = node.key
-		// console.log('key,', key)
 		// 切換展開/收合
 		if (expandedKeys.value[key as string]) {
 			delete expandedKeys.value[key as string] // 收合
 		} else {
 			expandedKeys.value[key as string] = true // 展開
 		}
-
-		// 讓 Vue 重新計算，確保 UI 變更
+        // 重新賦值，觸發視圖更新
 		expandedKeys.value = { ...expandedKeys.value }
-		// console.log('expandedKeys', expandedKeys)
-
-		// console.log('分類', node.label, '展開狀態：', expandedKeys.value)
 	}
 }
 
@@ -407,7 +348,7 @@ const showCalcArea = computed(() => {
 		</div>
 	</div>
 	<div class="date_range_area">
-		<el-config-provider :locale="locale">
+		<el-config-provider >
 			<el-date-picker
 				v-model="dateRange"
 				:type="'daterange'"
@@ -495,9 +436,6 @@ const showCalcArea = computed(() => {
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, 0.5);
-	/* display: flex;
-	justify-content: center;
-	align-items: center; */
     @include flexCenter;
 	&_content {
 		background-color: var(--color-yellow);
@@ -541,9 +479,7 @@ const showCalcArea = computed(() => {
     position: relative;
 	&::-webkit-scrollbar {
 		width: 5px;
-		/* background: var(--color-secondary); */
 		background: transparent;
-		/* background: #000; */
 	}
     .calc{
         &_area{
@@ -566,7 +502,6 @@ const showCalcArea = computed(() => {
 	}
 	.p-tree {
 		background-color: var(--color-secondary) !important;
-		/* background-color: var(--color-secondary); */
 	}
   
      
@@ -609,16 +544,13 @@ const showCalcArea = computed(() => {
 }
 .p-tree-node-content > button.p-tree-node-toggle-button:hover {
 	background: none;
-	/* color: transparent; */
 }
+
 .type_area {
 	display: flex;
 	justify-content: center;
-	/* align-items: left; */
 	margin-bottom: 10px;
 	& > label {
-		/* background-color: transparent; */
-		/* border: none; */
 		padding: 4px;
 		margin: 0 10px;
 		border-bottom: 3px solid transparent;
@@ -639,7 +571,6 @@ const showCalcArea = computed(() => {
 		color: var(--color-yellow);
 		font-family: 'Roboto', serif;
 		font-weight: 100;
-		/* font-size: 15px; */
 	}
 }
 .el-date-editor .el-range-input {
@@ -665,7 +596,6 @@ const showCalcArea = computed(() => {
 		color: var(--color-yellow);
 	}
 	&_remove {
-		/* color: rgb(138, 44, 44); */
 		color: rgb(70, 78, 95);
 		margin-right: 0px;
 	}

@@ -1,4 +1,4 @@
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView } from 'vue-router'; /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
     const __VLS_ctx = {};
     let __VLS_components;

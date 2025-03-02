@@ -1,4 +1,3 @@
-import 'element-plus/dist/index.css';
 type __VLS_Props = {
     expenseList: ExpenseType[];
     allCategoryArr: Category_id[];

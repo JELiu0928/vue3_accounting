@@ -1,19 +1,11 @@
-import { ref, defineProps, computed, defineEmits, nextTick, watch } from 'vue';
+import { ref, defineProps, computed, defineEmits, nextTick } from 'vue';
 import Tree from 'primevue/tree';
-import { ElDatePicker, ElConfigProvider } from 'element-plus';
-import 'element-plus/dist/index.css';
-import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import PieChart from './PieChart.vue';
 import LineChart from './LineChart.vue';
 import Excel from './Excel.vue';
 const props = defineProps();
-watch(props.allCategoryArr, (newVal) => {
-    console.log("allCategoryArr 變動了:", newVal);
-}, { deep: true });
-//#endregion
 const showPieChart = ref(false);
 const showLineChart = ref(false);
-const locale = zhCn;
 //定義事件
 const emit = defineEmits(['editExpense', 'removeExpense']);
 const balance = ref(0);
@@ -49,8 +41,6 @@ const selectedShowType = ref('show_expense');
 // const costomCate: Category_id[] = JSON.parse(localStorage.getItem('customCate') || '[]')
 // categories = [...categories, ...costomCate]
 // 
-// console.log('categories', categories)
-// const calcArea = ref<HTMLDivElement>(null)
 const selectedYear = ref(new Date().getFullYear());
 // const getLastFiveYear = ()=>{
 const currentYear = new Date().getFullYear();
@@ -60,7 +50,6 @@ for (let i = 0; i < 5; i++) {
 }
 // }
 const calculateLineChart = function (list, year) {
-    // console.log('執行111')
     const linechart = {
         labels: [],
         datasets: [
@@ -68,19 +57,11 @@ const calculateLineChart = function (list, year) {
             { label: '支出', data: [], borderColor: 'red', backgroundColor: 'rgba(255, 0, 0, 0.2)', fill: false }
         ]
     };
-    // console.log('Selected Year:', year);
     const monthlyDataMap = new Map();
-    // const date = new Date(expense.date)
     for (let month = 1; month <= 12; month++) {
         const yearMonth = `${String(year)}-${month.toString().padStart(2, '0')}`;
-        // console.log('==========',yearMonth)
         monthlyDataMap.set(yearMonth, { income: 0, expense: 0 });
     }
-    // console.log('111monthlyDatadMap',monthlyDataMap)
-    // if(!monthlyDataMap.has(yearMonth)){
-    //     monthlyDataMap.set(yearMonth, { income: 0, expense: 0 })
-    // }
-    // console.log('執行222')
     //折線圖
     list.forEach((expense) => {
         // console.log('list_expense',expense)
@@ -100,9 +81,6 @@ const calculateLineChart = function (list, year) {
     const labels = Array.from(monthlyDataMap.keys()); //把key轉成陣列
     const incomeData = labels.map((month) => monthlyDataMap.get(month).income);
     const expenseData = labels.map((month) => monthlyDataMap.get(month).expense);
-    // console.log('labesls ',labels,'incomeData',incomeData,'expenseData',expenseData)
-    // return monthlyDataMap
-    // console.log('222filteredList monthlyDataMap',monthlyDataMap)
     return {
         labels,
         incomeData: { label: '收入', data: incomeData, borderColor: 'green', backgroundColor: 'rgba(0, 255, 0, 0.2)', fill: false },
@@ -113,13 +91,7 @@ const calculateLineChart = function (list, year) {
         // ]
     };
 };
-// calculateLineChart(props.expenseList || [],'2025')
-// console.log(selectedYear)
-watch(selectedYear, (val) => {
-    console.log(val);
-});
 const lineChartData = computed(() => {
-    console.log('lineChartData computed');
     return calculateLineChart(props.expenseList || [], selectedYear.value);
 });
 const calculateTreeData = function (list, startDate, endDate, showType) {
@@ -130,7 +102,6 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
     const totals = list.reduce((acc, cur) => {
         const curDate = new Date(cur.date);
         const isInDateRange = startDate <= curDate && curDate <= endDate;
-        // console.log('isInDateRange',isInDateRange)
         if (isInDateRange) {
             if (cur.type === 'income') {
                 acc.totalIncome += parseInt(cur.amount, 10);
@@ -141,19 +112,16 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         }
         return acc;
     }, { totalIncome: 0, totalExpense: 0 });
-    // console.log('totalAmount',balance)
     totalIncome.value = totals.totalIncome;
     totalExpense.value = totals.totalExpense;
     balance.value = totals.totalIncome - totals.totalExpense;
     const filteredList = list.filter((expense) => {
-        // console.log('expense', expense)
         const expenseDate = new Date(expense.date);
         const isInDateRange = startDate <= expenseDate && expenseDate <= endDate;
         const isCorrectType = showType === 'show_expense' ? expense.type === 'expense' : expense.type === 'income';
         return isInDateRange && isCorrectType;
     });
     filteredList.forEach((expense) => {
-        // console.log('props.allCategoryArr.value=========',props.allCategoryArr)
         if (!categoryMap.has(expense.category)) {
             const category = props.allCategoryArr.find((c) => c.id === expense.category);
             // tree結構
@@ -167,9 +135,7 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
             });
         }
         const categoryNode = categoryMap.get(expense.category);
-        // console.log('categoryNode',categoryNode)
         //子節點
-        // console.log( expense.description)
         categoryNode.children.push({
             key: expense.id,
             id: expense.id,
@@ -181,19 +147,11 @@ const calculateTreeData = function (list, startDate, endDate, showType) {
         });
         categoryNode.total += parseInt(expense.amount);
     });
-    // console.log('categoryMap',categoryMap)
     //日期排序：舊~新
     categoryMap.forEach((category) => {
         //轉時間戳之後大小排序
         category.children.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     });
-    // console.log('categoryMap',categoryMap)
-    // categoryMap.reduce((cate,_)=>{
-    //     console.log('categoryMap   cate===',cate)
-    //     // cate.reduce((acc)=>{
-    //     //     console.log(acc)
-    //     // })
-    // })
     // 處理圓餅圖資料
     categoryMap.forEach((category) => {
         // console.log('===', category)
@@ -221,7 +179,6 @@ const searchByDateRange = function (type) {
         const [newStartDate, newEndDate] = dateRange.value;
         start_date.value = new Date(newStartDate.setHours(0, 0, 0, 0));
         end_date.value = new Date(newEndDate.setHours(23, 59, 59, 999));
-        // console.log(start_date.value, '-----', end_date.value)
     }
     else if (type == 'today') {
         const today = new Date();
@@ -238,7 +195,6 @@ const searchByDateRange = function (type) {
     }
 };
 const edit = function (expense) {
-    console.log('sss', expense);
     emit('editExpense', expense);
 };
 const remove = function (expense) {
@@ -256,10 +212,8 @@ const getRandomColor = () => {
 // const expandedKeys = ref({}) // 存放展開狀態
 const expandedKeys = ref({}); // 初始化為空對象
 const toggleCategory = (node) => {
-    // console.log('node', node)
     if (node.type === 'category') {
         const key = node.key;
-        // console.log('key,', key)
         // 切換展開/收合
         if (expandedKeys.value[key]) {
             delete expandedKeys.value[key]; // 收合
@@ -267,10 +221,8 @@ const toggleCategory = (node) => {
         else {
             expandedKeys.value[key] = true; // 展開
         }
-        // 讓 Vue 重新計算，確保 UI 變更
+        // 重新賦值，觸發視圖更新
         expandedKeys.value = { ...expandedKeys.value };
-        // console.log('expandedKeys', expandedKeys)
-        // console.log('分類', node.label, '展開狀態：', expandedKeys.value)
     }
 };
 const isTreeDataReady = ref(false);
@@ -358,12 +310,8 @@ function __VLS_template() {
     const __VLS_10 = {}.ElConfigProvider;
     /** @type { [typeof __VLS_components.ElConfigProvider, typeof __VLS_components.elConfigProvider, typeof __VLS_components.ElConfigProvider, typeof __VLS_components.elConfigProvider, ] } */ ;
     // @ts-ignore
-    const __VLS_11 = __VLS_asFunctionalComponent(__VLS_10, new __VLS_10({
-        locale: ((__VLS_ctx.locale)),
-    }));
-    const __VLS_12 = __VLS_11({
-        locale: ((__VLS_ctx.locale)),
-    }, ...__VLS_functionalComponentArgsRest(__VLS_11));
+    const __VLS_11 = __VLS_asFunctionalComponent(__VLS_10, new __VLS_10({}));
+    const __VLS_12 = __VLS_11({}, ...__VLS_functionalComponentArgsRest(__VLS_11));
     const __VLS_16 = {}.ElDatePicker;
     /** @type { [typeof __VLS_components.ElDatePicker, typeof __VLS_components.elDatePicker, ] } */ ;
     // @ts-ignore
@@ -567,14 +515,11 @@ const __VLS_self = (await import('vue')).defineComponent({
     setup() {
         return {
             Tree: Tree,
-            ElDatePicker: ElDatePicker,
-            ElConfigProvider: ElConfigProvider,
             PieChart: PieChart,
             LineChart: LineChart,
             Excel: Excel,
             showPieChart: showPieChart,
             showLineChart: showLineChart,
-            locale: locale,
             balance: balance,
             totalExpense: totalExpense,
             totalIncome: totalIncome,

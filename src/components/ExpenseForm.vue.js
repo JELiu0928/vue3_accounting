@@ -1,8 +1,8 @@
 import { ref, onMounted, watch } from 'vue';
 import ExpenseList from './ExpenseList.vue';
-import { ElDatePicker, ElConfigProvider } from 'element-plus';
-import 'element-plus/dist/index.css';
-import zhCn from 'element-plus/es/locale/lang/zh-cn';
+// import { ElDatePicker, ElConfigProvider } from 'element-plus'
+// import 'element-plus/dist/index.css'
+import zhTw from 'element-plus/es/locale/lang/zh-tw';
 // 定義 input 欄位的值
 const countValue = ref('');
 const descValue = ref('');
@@ -20,7 +20,7 @@ const customCate = ref('');
 const customCategoriesArr = ref([]);
 const allCategoryArr = ref([]);
 const date = ref(new Date());
-const locale = zhCn;
+const locale = zhTw;
 const selectedCate = ref(null);
 const selectedAddCate = ref(null);
 const selectedType = ref('expense');
@@ -39,7 +39,7 @@ const loadStorageExpense = () => {
 };
 onMounted(loadStorageExpense);
 allCategoryArr.value = [...categories];
-console.log('allCategoryArr.value==', allCategoryArr.value);
+// console.log('allCategoryArr.value==',allCategoryArr.value)
 // 定義方法處理數字或符號的點擊事件
 const appendToInput = (value) => {
     const operators = ['+', '-', '×', '÷'];
@@ -96,9 +96,7 @@ const saveOrUpdate = () => {
         return;
     }
     if (countValue.value) {
-        // const selectedCategory = categories.find((c: Category_id) => c.id === selectedCate.value)
         const selectedCategory = allCategoryArr.value.find((c) => c.id === selectedCate.value);
-        console.log('==selectedCategory=', selectedCategory);
         const defaultDescription = selectedCategory ? selectedCategory.cate : '';
         countValue.value = String(eval(countValue.value.replace(/÷/g, '/').replace(/×/g, '*')));
         const expense = {
@@ -111,18 +109,14 @@ const saveOrUpdate = () => {
         };
         // 編輯模式下更新資料
         if (isEditMode.value) {
-            // console.log('編輯', myExpenseList.value)
             const index = myExpenseList.value.findIndex((item) => {
-                console.log('item', item);
                 return item.id === (currentEditItem.value ? currentEditItem.value.id : null);
             });
-            console.log('index', index);
             if (index !== -1) {
                 myExpenseList.value[index] = expense;
             }
         }
         else {
-            // console.log('新增')
             // 新增項目
             myExpenseList.value.push(expense);
         }
@@ -137,12 +131,9 @@ const saveOrUpdate = () => {
         alert('請輸入金額');
         return;
     }
-    // console.log(myExpenseList)
-    // console.log(localStorage.getItem('storageExpense'))
 };
 const showAddCategoryModal = ref(false);
 const addCategory = (cate) => {
-    console.log('add', selectedAddCate.value);
     const isSameCate = [...categories, ...customCategoriesArr.value].some((item) => item.cate === cate);
     if (isSameCate) {
         alert('分類名稱已存在，請輸入不同的名稱');
@@ -162,24 +153,17 @@ const addCategory = (cate) => {
     }
 };
 const delCategory = (cateID) => {
-    // console.log('刪除', cateID)
-    // console.log('刪除storageExpense', myExpenseList.value)
     const confirmCateRemove = confirm('確定刪除此類別嗎?');
     if (confirmCateRemove) {
-        // console.log('front', customCategoriesArr.value)
         customCategoriesArr.value = customCategoriesArr.value.filter((item) => item.id !== cateID);
-        // console.log('back', customCategoriesArr.value)
         localStorage.setItem('customCate', JSON.stringify(customCategoriesArr.value));
-        // console.log('if刪除', cateID)
         const delItemIndex = myExpenseList.value.findIndex((item) => item.category === cateID);
-        // console.log(delItemIndex)
         if (delItemIndex !== -1) {
             myExpenseList.value[delItemIndex].category = 999;
             localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
         }
         customCate.value = '';
     }
-    // console.log('刪除2', myExpenseList.value)
 };
 const closeAddCateModal = (() => {
     showAddCategoryModal.value = !showAddCategoryModal.value;
@@ -190,20 +174,11 @@ const getCategory = (cate) => {
     customCate.value = cate.cate;
 };
 watch(customCategoriesArr, (newVal) => {
-    // console.log('設置customCate')
     localStorage.setItem('customCate', JSON.stringify(newVal));
-    // console.log('vvvv', customCategoriesArr.value)
     const costomCateArr = JSON.parse(localStorage.getItem('customCate') || '[]');
-    // console.log('costomCateArr',costomCateArr)
-    console.log('categories===', categories);
     allCategoryArr.value = [...categories, ...costomCateArr];
-    // console.log('allCategoryArr',allCategoryArr.value)
-    console.log('allCategoryArr====', allCategoryArr.value);
 }, { deep: true });
-// const isCostomCate = ref<boolean>(false)
 const editExpense = (expense) => {
-    console.log('exxxxxedit', expense);
-    console.log('selectedType.value', selectedType.value);
     isEditMode.value = true;
     currentEditItem.value = expense;
     date.value = new Date(expense.date);
@@ -217,7 +192,6 @@ const removeExpense = (expense) => {
     if (confirmRemove) {
         myExpenseList.value = myExpenseList.value.filter((item) => item.id !== expense.id);
         localStorage.setItem('storageExpense', JSON.stringify(myExpenseList.value));
-        // console.log('remove', expense)
     }
 }; /* PartiallyEnd: #3632/scriptSetup.vue */
 function __VLS_template() {
@@ -476,8 +450,6 @@ const __VLS_self = (await import('vue')).defineComponent({
     setup() {
         return {
             ExpenseList: ExpenseList,
-            ElDatePicker: ElDatePicker,
-            ElConfigProvider: ElConfigProvider,
             countValue: countValue,
             descValue: descValue,
             buttons: buttons,

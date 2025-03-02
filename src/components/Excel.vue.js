@@ -10,7 +10,7 @@ const filterData = () => {
     // 遍歷treeData，每個分類都有children
     props.treeData.forEach((category) => {
         //   latestTreeData.value.forEach(category => {
-        console.log('category', category);
+        // console.log('category',category)
         if (category.children && category.children.length > 0) {
             category.children.forEach(child => {
                 // 將每個child的資料與其所屬的category資料結合
